@@ -198,8 +198,15 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
     private AsyncTask<Void, Void, CameraController> open_camera_task; // background task used for opening camera
     private CloseCameraTask close_camera_task; // background task used for closing camera
     private boolean has_permissions = true; // whether we have permissions necessary to operate the camera (camera, storage); assume true until we've been denied one of them
+
+    /**
+     * 切换至视频时被设置
+     */
     private boolean is_video;
     private volatile MediaRecorder video_recorder; // must be volatile for test project reading the state
+    /**
+     * 开始录相时被设置  状态 与 开始时间
+     */
     private volatile boolean video_start_time_set; // must be volatile for test project reading the state
     private long video_start_time; // system time when the video recording was started, or last resumed if it was paused
     private long video_accumulated_time; // this time should be added to (System.currentTimeMillis() - video_start_time) to find the true video duration, that takes into account pausing/resuming, as well as any auto-restarts from max filesize
@@ -263,6 +270,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
     private int remaining_restart_video;
 
     private boolean is_preview_started;
+
+    /**
+     * 预录标识
+     */
+    private boolean is_pre_recording_started;
 
     private OrientationEventListener orientationEventListener;
     private int current_orientation; // orientation received by onOrientationChanged
@@ -5704,7 +5716,17 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         if( is_video && !photo_snapshot ) {
             if( MyDebug.LOG )
                 Log.d(TAG, "start video recording");
-            startVideoRecording(max_filesize_restart);
+
+           // 根据状态判断是预录像 还是开始录像
+            if (is_pre_recording_started) {
+                startVideoRecording(max_filesize_restart);
+                // 开始录像后把状态置为 false
+                is_pre_recording_started = false;
+            } else {
+                // todo ccg 修改代码
+                startVideoPreRecording(max_filesize_restart);
+                is_pre_recording_started = true;
+            }
             return;
         }
 
@@ -5903,13 +5925,16 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 else {
                     local_video_recorder.setOutputFile(videoFileInfo.video_pfd_saf.getFileDescriptor());
                 }
+                // 设置展示状态  展示元素调整
                 applicationInterface.cameraInOperation(true, true);
                 told_app_starting = true;
+                // 处理界面元素
                 applicationInterface.startingVideo();
         		/*if( true ) // test
         			throw new IOException();*/
+                // 用于预览
                 cameraSurface.setVideoRecorder(local_video_recorder);
-
+                // 设置方向提示
                 local_video_recorder.setOrientationHint(getImageVideoRotation());
                 if( MyDebug.LOG )
                     Log.d(TAG, "about to prepare video recorder");
@@ -6031,6 +6056,127 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 video_recorder.reset();
                 video_recorder.release();
                 video_recorder = null;
+                video_recorder_is_paused = false;
+                applicationInterface.deleteUnusedVideo(videoFileInfo.video_method, videoFileInfo.video_uri, videoFileInfo.video_filename);
+                videoFileInfo = new VideoFileInfo();
+                applicationInterface.cameraInOperation(false, true);
+                this.reconnectCamera(true);
+                this.showToast(null, R.string.video_no_free_space);
+            }
+        }
+    }
+
+    /** Start video pre recording.
+     */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void startVideoPreRecording(final boolean max_filesize_restart) {
+        if( MyDebug.LOG )
+            Log.d(TAG, "startVideoRecording");
+        focus_success = FOCUS_DONE; // clear focus rectangle (don't do for taking photos yet)
+        test_called_next_output_file = false;
+        test_started_next_output_file = false;
+        nextVideoFileInfo = null;
+
+        // 音视频的配置信息
+        final VideoProfile profile = getVideoProfile();
+        // 视频文件信息
+        VideoFileInfo info = createVideoFile(profile.fileExtension);
+        if( info == null ) {
+            videoFileInfo = new VideoFileInfo();
+            applicationInterface.onFailedCreateVideoFileError();
+            applicationInterface.cameraInOperation(false, true);
+        }
+        else {
+            videoFileInfo = info;
+            if( MyDebug.LOG ) {
+                Log.d(TAG, "current_video_quality: " + this.video_quality_handler.getCurrentVideoQualityIndex());
+                if (this.video_quality_handler.getCurrentVideoQualityIndex() != -1)
+                    Log.d(TAG, "current_video_quality value: " + this.video_quality_handler.getCurrentVideoQuality());
+                Log.d(TAG, "resolution " + profile.videoFrameWidth + " x " + profile.videoFrameHeight);
+                Log.d(TAG, "bit rate " + profile.videoBitRate);
+            }
+
+            boolean enable_sound = applicationInterface.getShutterSoundPref();
+            if( MyDebug.LOG )
+                Log.d(TAG, "enable_sound? " + enable_sound);
+            camera_controller.enableShutterSound(enable_sound); // Camera2 API can disable video sound too
+            // 替换掉 支持预录需要其他实现
+            MediaRecorder local_video_recorder = new MediaRecorder();
+            // camera2 啥也没做
+            this.camera_controller.unlock();
+            if( MyDebug.LOG )
+                Log.d(TAG, "set video listeners");
+            // 配置处理是否达到最大文件 ，最大文件间隔等基于recorder的功能 已移除
+
+            // 一些初始化工作 比如 如果打开声音提示的，播放开始录像的声音
+            camera_controller.initVideoRecorderPrePrepare(local_video_recorder);
+            if( profile.no_audio_permission ) {
+                showToast(null, R.string.permission_record_audio_not_available, true);
+            }
+
+            boolean store_location = applicationInterface.getGeotaggingPref();
+            if( store_location && applicationInterface.getLocation() != null ) {
+                Location location = applicationInterface.getLocation();
+                // don't log location, in case of privacy!
+                local_video_recorder.setLocation((float)location.getLatitude(), (float)location.getLongitude());
+            }
+
+            if( MyDebug.LOG )
+                Log.d(TAG, "copy video profile to media recorder");
+
+            // 设置
+            //profile.copyToMediaRecorder(local_video_recorder);
+
+            boolean told_app_starting = false; // true if we called applicationInterface.startingVideo()
+            try {
+                // 最大文件限制
+                ApplicationInterface.VideoMaxFileSize video_max_filesize = applicationInterface.getVideoMaxFileSizePref();
+                long max_filesize = video_max_filesize.max_filesize;
+
+                video_restart_on_max_filesize = video_max_filesize.auto_restart; // note, we set this even if max_filesize==0, as it will still apply when hitting device max filesize limit
+
+                // handle restart timer  重启间隔 功能删除
+
+
+                // 设置展示状态  UI元素调整 比如展示 界面按钮 相关信息
+                applicationInterface.cameraInOperation(true, true);
+                told_app_starting = true;
+                // 调整录像按钮 释放录音监听   todo ccg  需要 调整
+                applicationInterface.startingVideo();
+                // 构建session 等
+//                camera_controller.initVideoRecorderPostPrepare(local_video_recorder, want_photo_video_recording);
+
+                // todo ccg 各种开始标志位的设置
+                // videoRecordingStarted(max_filesize_restart);
+
+
+                // 失败后必须要调用 的
+//                applicationInterface.stoppingVideo();
+//                failedToStartVideoRecorder(profile);
+
+
+
+
+            }catch(IOException e) {
+                // 保存文件等io异常需要调用的
+                applicationInterface.onFailedCreateVideoFileError();
+//                video_recorder.reset();
+//                video_recorder.release();
+//                video_recorder = null;
+                video_recorder_is_paused = false;
+                applicationInterface.deleteUnusedVideo(videoFileInfo.video_method, videoFileInfo.video_uri, videoFileInfo.video_filename);
+                videoFileInfo = new VideoFileInfo();
+                applicationInterface.cameraInOperation(false, true);
+                this.reconnectCamera(true);
+            }
+            catch(NoFreeStorageException e) {
+
+                if( told_app_starting ) {
+                    applicationInterface.stoppingVideo();
+                }
+//                video_recorder.reset();
+//                video_recorder.release();
+//                video_recorder = null;
                 video_recorder_is_paused = false;
                 applicationInterface.deleteUnusedVideo(videoFileInfo.video_method, videoFileInfo.video_uri, videoFileInfo.video_filename);
                 videoFileInfo = new VideoFileInfo();
@@ -6845,6 +6991,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             Log.d(TAG, "autoFocusCompleted exit");
     }
 
+    /**
+     * 从reader中拿到图像 用于预览 各种预览状态设置
+     *
+     */
     public void startCameraPreview() {
         long debug_time = 0;
         if( MyDebug.LOG ) {

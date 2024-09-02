@@ -247,6 +247,7 @@
     <string name="focus_mode">Focus Mode</string>
     <string name="flash_mode">Flash Mode</string>
     <string name="switch_to_front_camera">Switch to front camera</string>
+    <string name="pre_recording">pre recording</string>
     <string name="switch_to_back_camera">Switch to back camera</string>
     <string name="switch_to_video">Switch to video mode</string>
     <string name="switch_to_photo">Switch to photo mode</string>

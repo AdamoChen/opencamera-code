@@ -35,6 +35,7 @@ public interface ApplicationInterface {
     }
 
     enum VideoMethod {
+        RAM, // video will be cache to a ram
         FILE, // video will be saved to a file
         SAF, // video will be saved using Android 5's Storage Access Framework
         MEDIASTORE, // video will be saved to the supplied MediaStore Uri
