@@ -2045,6 +2045,19 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         main_activity.getMainUI().destroyPopup(); // as the available popup options change while recording video
     }
 
+    @Override
+    public void startingPreVideo() {
+        if( sharedPreferences.getBoolean(PreferenceKeys.LockVideoPreferenceKey, false) ) {
+            main_activity.lockScreen();
+        }
+        main_activity.stopAudioListeners(); // important otherwise MediaRecorder will fail to start() if we have an audiolistener! Also don't want to have the speech recognizer going off
+        ImageButton view = main_activity.findViewById(R.id.take_photo);
+        view.setImageResource(R.drawable.take_video_pre_recording);
+        view.setContentDescription( getContext().getResources().getString(R.string.pre2start_video) );
+        view.setTag(R.drawable.take_video_pre_recording); // for testing
+        main_activity.getMainUI().destroyPopup(); // as the available popup options change while recording video
+    }
+
     private void startVideoSubtitlesTask(final VideoMethod video_method) {
         final String preference_stamp_dateformat = this.getStampDateFormatPref();
         final String preference_stamp_timeformat = this.getStampTimeFormatPref();

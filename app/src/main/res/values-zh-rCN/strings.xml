@@ -257,6 +257,8 @@
     <string name="start_video">开始录像</string>
     <string name="stop_video">停止录像</string>
 
+    <string name="pre2start_video">正式开始录像</string>
+
     <string name="max_filesize">最大文件尺寸</string>
     <string name="mb_abbreviation">MB</string> <!-- symbol short for megabytes -->
 

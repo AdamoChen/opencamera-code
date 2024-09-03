@@ -21,6 +21,7 @@ import net.sourceforge.opencamera.preview.ApplicationInterface.NoFreeStorageExce
 import net.sourceforge.opencamera.preview.camerasurface.CameraSurface;
 import net.sourceforge.opencamera.preview.camerasurface.MySurfaceView;
 import net.sourceforge.opencamera.preview.camerasurface.MyTextureView;
+import net.sourceforge.opencamera.videosprerecord.VideoPreRecorder;
 
 import java.io.File;
 //import java.io.FileOutputStream;
@@ -6077,7 +6078,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         test_started_next_output_file = false;
         nextVideoFileInfo = null;
 
-        // 音视频的配置信息
+        // 视频的配置信息
         final VideoProfile profile = getVideoProfile();
         // 视频文件信息
         VideoFileInfo info = createVideoFile(profile.fileExtension);
@@ -6101,7 +6102,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 Log.d(TAG, "enable_sound? " + enable_sound);
             camera_controller.enableShutterSound(enable_sound); // Camera2 API can disable video sound too
             // 替换掉 支持预录需要其他实现
-            MediaRecorder local_video_recorder = new MediaRecorder();
+//            MediaRecorder local_video_recorder = new MediaRecorder();
+            // 构建视频预录器
+            VideoPreRecorder videoPreRecorder = new VideoPreRecorder(videoFileInfo, );
+
+
             // camera2 啥也没做
             this.camera_controller.unlock();
             if( MyDebug.LOG )
@@ -6109,40 +6114,41 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             // 配置处理是否达到最大文件 ，最大文件间隔等基于recorder的功能 已移除
 
             // 一些初始化工作 比如 如果打开声音提示的，播放开始录像的声音
-            camera_controller.initVideoRecorderPrePrepare(local_video_recorder);
+            camera_controller.initVideoRecorderPrePrepare(null);
             if( profile.no_audio_permission ) {
                 showToast(null, R.string.permission_record_audio_not_available, true);
             }
 
-            boolean store_location = applicationInterface.getGeotaggingPref();
-            if( store_location && applicationInterface.getLocation() != null ) {
-                Location location = applicationInterface.getLocation();
-                // don't log location, in case of privacy!
-                local_video_recorder.setLocation((float)location.getLatitude(), (float)location.getLongitude());
-            }
-
-            if( MyDebug.LOG )
-                Log.d(TAG, "copy video profile to media recorder");
+            // todo ccg 位置信息后期再扩展
+//            boolean store_location = applicationInterface.getGeotaggingPref();
+//            if( store_location && applicationInterface.getLocation() != null ) {
+//                Location location = applicationInterface.getLocation();
+//                // don't log location, in case of privacy!
+//                local_video_recorder.setLocation((float)location.getLatitude(), (float)location.getLongitude());
+//            }
 
             // 设置
             //profile.copyToMediaRecorder(local_video_recorder);
 
             boolean told_app_starting = false; // true if we called applicationInterface.startingVideo()
             try {
-                // 最大文件限制
-                ApplicationInterface.VideoMaxFileSize video_max_filesize = applicationInterface.getVideoMaxFileSizePref();
-                long max_filesize = video_max_filesize.max_filesize;
-
-                video_restart_on_max_filesize = video_max_filesize.auto_restart; // note, we set this even if max_filesize==0, as it will still apply when hitting device max filesize limit
-
+                // todo ccg 最大文件限制
+//                ApplicationInterface.VideoMaxFileSize video_max_filesize = applicationInterface.getVideoMaxFileSizePref();
+//                long max_filesize = video_max_filesize.max_filesize;
+//                video_restart_on_max_filesize = video_max_filesize.auto_restart; // note, we set this even if max_filesize==0, as it will still apply when hitting device max filesize limit
                 // handle restart timer  重启间隔 功能删除
 
 
                 // 设置展示状态  UI元素调整 比如展示 界面按钮 相关信息
                 applicationInterface.cameraInOperation(true, true);
                 told_app_starting = true;
-                // 调整录像按钮 释放录音监听   todo ccg  需要 调整
-                applicationInterface.startingVideo();
+                // 调整录像按钮 释放录音监听
+                applicationInterface.startingPreVideo();
+
+
+
+
+
                 // 构建session 等
 //                camera_controller.initVideoRecorderPostPrepare(local_video_recorder, want_photo_video_recording);
 

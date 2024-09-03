@@ -429,6 +429,14 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
 
     }
 
+    /**
+     * 开始预录
+     */
+    @Override
+    public void startingPreVideo() {
+
+    }
+
     @Override
     public void startedVideo() {
 
