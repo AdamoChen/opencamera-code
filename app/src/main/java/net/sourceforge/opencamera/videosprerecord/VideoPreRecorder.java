@@ -2,6 +2,7 @@ package net.sourceforge.opencamera.videosprerecord;
 
 import android.app.Activity;
 import android.content.ContentValues;
+import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -21,14 +22,16 @@ import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Surface;
-import android.view.SurfaceView;
+import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import net.sourceforge.opencamera.MainActivity;
+import net.sourceforge.opencamera.cameracontroller.CameraController;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -49,15 +52,23 @@ import java.util.concurrent.LinkedBlockingDeque;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoPreRecorder {
     public static Size WH_720X480 = new Size(2560, 1440);
+
+    private CameraController camera_controller;
+
     /**
      * 预览
      */
-    private SurfaceView previewSurfaceView;
-    private CameraDevice mCameraDevice;
+//    public SurfaceView previewSurfaceView;
+//    public TextureView previewSurfaceView;
+
+    public Surface previewSurface;
+
+    public CameraDevice mCameraDevice;
+    public Size size = WH_720X480;
+
     List<Surface> surfaces = new ArrayList<>();
     private CaptureRequest.Builder mPreviewBuilder;
     private CameraCaptureSession mCameraCaptureSession;
-    private Size size;
 
 
     private MediaCodec videosMediaCodec;
@@ -93,15 +104,20 @@ public class VideoPreRecorder {
 
     private HandlerThread handlerThread3 = new HandlerThread("ccg handlerThread3");
     private Handler handler3;
+
+    private HandlerThread handlerThread4 = new HandlerThread("ccg handlerThread4");
+    private Handler handler4;
+
+
     private String videoName;
 
 
-    public void startPreRecord(MainActivity activity, Handler handler) {
+    public void startPreRecord(MainActivity activity, FileDescriptor fd) {
 
         try {
-            File type = activity.getExternalFilesDir("video");
-            videoName = "/" + System.currentTimeMillis() + ".mp4";
-            File videoFile = new File(type, videoName);
+//            File type = activity.getExternalFilesDir("video");
+//            videoName = "/" + System.currentTimeMillis() + ".mp4";
+//            File videoFile = new File(type, videoName);
 
             if (!handlerThread.isAlive()) {
                 handlerThread.start();
@@ -116,6 +132,11 @@ public class VideoPreRecorder {
             if (!handlerThread3.isAlive()) {
                 handlerThread3.start();
                 handler3 = new Handler(handlerThread3.getLooper());
+            }
+
+            if (!handlerThread4.isAlive()) {
+                handlerThread4.start();
+                handler4 = new Handler(handlerThread4.getLooper());
             }
 
 
@@ -141,10 +162,13 @@ public class VideoPreRecorder {
             audioMediaCodec.start();
 
             // 初始化 MediaMuxer
-            mediaMuxer = new MediaMuxer(videoFile.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+//            mediaMuxer = new MediaMuxer(videoFile.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            mediaMuxer = new MediaMuxer(fd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 
             // session
-            Surface previewSurface = previewSurfaceView.getHolder().getSurface();
+//            Surface previewSurface = previewSurfaceView.getHolder().getSurface();
+
+            // 设置 SurfaceTextureListener
             List<Surface> surfaces = Arrays.asList(previewSurface, inputSurface);
 
             CaptureRequest.Builder captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -156,7 +180,7 @@ public class VideoPreRecorder {
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     mCameraCaptureSession = session;
                     try {
-                        mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, handler);
+                        mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, handler4);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -333,7 +357,6 @@ public class VideoPreRecorder {
         handler2.post(() -> {
             isRecording = RECORDING;
 
-
             for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
                 MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
                 System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
@@ -359,7 +382,7 @@ public class VideoPreRecorder {
     /**
      * 停止录制
      */
-    public void stopNewRecord(MainActivity activity) {
+    public void stopNewRecording(MainActivity activity) {
         handler3.post(() -> {
 
             isRecording = STOP_RECORDING;
@@ -390,7 +413,7 @@ public class VideoPreRecorder {
 
             fifoQueue.clear();
 
-            //停止后，将视频从内部目录copy到公共目录
+            /*//停止后，将视频从内部目录copy到公共目录
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
             String fname = "ccg_ext_" + sdf.format(new Date()) + ".mp4";
 
@@ -421,16 +444,15 @@ public class VideoPreRecorder {
                 file.delete();
             } catch (Exception e) {
                 e.printStackTrace();
-            }
+            }*/
 
         });
 
     }
 
-    public VideoPreRecorder(SurfaceView surfaceView, CameraDevice cameraDevice, Size size) {
-        this.previewSurfaceView = surfaceView;
-        this.size = size;
-        this.mCameraDevice = cameraDevice;
+    public VideoPreRecorder(CameraController camera_controller) {
+        this.camera_controller = camera_controller;
+        camera_controller.initVideoPreRecorder(this);
     }
 
 }

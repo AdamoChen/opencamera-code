@@ -1,6 +1,7 @@
 package net.sourceforge.opencamera.cameracontroller;
 
 import net.sourceforge.opencamera.MyDebug;
+import net.sourceforge.opencamera.videosprerecord.VideoPreRecorder;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -56,6 +57,10 @@ public abstract class CameraController {
     public volatile boolean test_used_tonemap_curve;
     public volatile int test_texture_view_buffer_w; // for TextureView, keep track of buffer size
     public volatile int test_texture_view_buffer_h;
+
+    public void initVideoPreRecorder(VideoPreRecorder videoPreRecorder) {
+        throw new UnsupportedOperationException("initVideoPreRecorder error");
+    }
 
     public static class CameraFeatures {
         public boolean is_zoom_supported;

@@ -238,6 +238,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
     private long cached_display_rotation_time_ms;
     private int cached_display_rotation;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         long debug_time = 0;

@@ -2,6 +2,7 @@ package net.sourceforge.opencamera.cameracontroller;
 
 import net.sourceforge.opencamera.HDRProcessor;
 import net.sourceforge.opencamera.MyDebug;
+import net.sourceforge.opencamera.videosprerecord.VideoPreRecorder;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -308,6 +309,17 @@ public class CameraController2 extends CameraController {
      *  different to the preview.
      */
     private final static long max_preview_exposure_time_c = 1000000000L/5;
+
+    /**
+     * 初始化
+     * @param videoPreRecorder
+     */
+    public void initVideoPreRecorder(VideoPreRecorder videoPreRecorder) {
+        this.surface_texture = new Surface(texture);
+        videoPreRecorder.previewSurface = surface_texture;
+//        videoPreRecorder.size =
+        videoPreRecorder.mCameraDevice = camera;
+    }
 
     private void resetCaptureResultInfo() {
         capture_result_is_ae_scanning = false;
