@@ -1,8 +1,6 @@
 package net.sourceforge.opencamera.videosprerecord;
 
 import android.app.Activity;
-import android.content.ContentValues;
-import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -14,35 +12,24 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Surface;
-import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import net.sourceforge.opencamera.MainActivity;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
+import net.sourceforge.opencamera.preview.VideoProfile;
 
-import java.io.File;
 import java.io.FileDescriptor;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -51,7 +38,6 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoPreRecorder {
-    public static Size WH_720X480 = new Size(2560, 1440);
 
     private CameraController camera_controller;
 
@@ -64,16 +50,14 @@ public class VideoPreRecorder {
     public Surface previewSurface;
 
     public CameraDevice mCameraDevice;
-    public Size size = WH_720X480;
+    public Size size = new Size(2560, 1440);
 
     List<Surface> surfaces = new ArrayList<>();
     private CaptureRequest.Builder mPreviewBuilder;
     private CameraCaptureSession mCameraCaptureSession;
 
-
     private MediaCodec videosMediaCodec;
     private MediaCodec audioMediaCodec;
-
     AudioRecord audioRecord;
 
     private MediaMuxer mediaMuxer;
@@ -90,8 +74,7 @@ public class VideoPreRecorder {
     private int vdCount = 0;
 
     // 目前分辨率 码率下  200 约等于5秒
-    CircularBuffer<VideosCacheData> circularBuffer = new CircularBuffer<>(200);
-
+    CircularBuffer<VideosCacheData> circularBuffer = new CircularBuffer<>(200 * 10);
     // 正式录制的数据缓存队列
     private final BlockingDeque<VideosCacheData> fifoQueue = new LinkedBlockingDeque<>();
     private final Object queueLock = new Object();
@@ -102,8 +85,8 @@ public class VideoPreRecorder {
     private HandlerThread handlerThread2 = new HandlerThread("ccg handlerThread2");
     private Handler handler2;
 
-    private HandlerThread handlerThread3 = new HandlerThread("ccg handlerThread3");
-    private Handler handler3;
+//    private HandlerThread handlerThread3 = new HandlerThread("ccg handlerThread3");
+//    private Handler handler3;
 
     private HandlerThread handlerThread4 = new HandlerThread("ccg handlerThread4");
     private Handler handler4;
@@ -112,39 +95,50 @@ public class VideoPreRecorder {
     private String videoName;
 
 
-    public void startPreRecord(MainActivity activity, FileDescriptor fd) {
+    public void startPreRecord(MainActivity activity, VideoProfile videoProfile, FileDescriptor fd) {
 
         try {
-//            File type = activity.getExternalFilesDir("video");
-//            videoName = "/" + System.currentTimeMillis() + ".mp4";
-//            File videoFile = new File(type, videoName);
-
             if (!handlerThread.isAlive()) {
                 handlerThread.start();
+                // 从相机中获取数据 丢进缓存中
                 handler1 = new Handler(handlerThread.getLooper());
             }
 
             if (!handlerThread2.isAlive()) {
                 handlerThread2.start();
+                // 开始正式录像后 循环从队列中取数据
                 handler2 = new Handler(handlerThread2.getLooper());
             }
 
-            if (!handlerThread3.isAlive()) {
-                handlerThread3.start();
-                handler3 = new Handler(handlerThread3.getLooper());
-            }
+//            if (!handlerThread3.isAlive()) {
+//                handlerThread3.start();
+//                handler3 = new Handler(handlerThread3.getLooper());
+//            }
 
             if (!handlerThread4.isAlive()) {
                 handlerThread4.start();
+                // createCaptureSession 所需要的handle
                 handler4 = new Handler(handlerThread4.getLooper());
             }
 
+            if (videoProfile.videoFrameHeight != 0 && videoProfile.videoFrameWidth != 0) {
+                size = new Size(videoProfile.videoFrameWidth, videoProfile.videoFrameHeight);
+            }
+
+            int frameRate = 60;
+            if (videoProfile.videoFrameRate != 0) {
+                frameRate = videoProfile.videoFrameRate;
+            }
+
+            int sampleRate = 44100;
+//            int audioBitRate = 64000;
+            int audioBitRate = videoProfile.audioBitRate;
 
             videosMediaCodec = MediaCodec.createEncoderByType("video/avc");
             MediaFormat format = MediaFormat.createVideoFormat("video/avc", size.getWidth(), size.getHeight());
             format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
             format.setInteger(MediaFormat.KEY_BIT_RATE, size.getWidth() * size.getHeight() * 3 / 2);
-            format.setInteger(MediaFormat.KEY_FRAME_RATE, 60);
+            format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
             format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
 
             videosMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -152,9 +146,9 @@ public class VideoPreRecorder {
             videosMediaCodec.start();
 
             // 配置音频编码器
-            MediaFormat audioFormat = MediaFormat.createAudioFormat("audio/mp4a-latm", 44100, 1);
+            MediaFormat audioFormat = MediaFormat.createAudioFormat("audio/mp4a-latm", sampleRate, 1);
             audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-            audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, 64000);  // 设置比特率为 64 kbps
+            audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, audioBitRate);  // 设置比特率为 64 kbps
 
             // 创建并配置音频编码器
             audioMediaCodec = MediaCodec.createEncoderByType("audio/mp4a-latm");
@@ -162,8 +156,9 @@ public class VideoPreRecorder {
             audioMediaCodec.start();
 
             // 初始化 MediaMuxer
-//            mediaMuxer = new MediaMuxer(videoFile.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
             mediaMuxer = new MediaMuxer(fd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            // 视频输出方向顺时针转90度
+            mediaMuxer.setOrientationHint(90);
 
             // session
 //            Surface previewSurface = previewSurfaceView.getHolder().getSurface();
@@ -193,17 +188,14 @@ public class VideoPreRecorder {
                 }
             }, null);
 
-            int minBufSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            int minBufSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
             // 开始音频录制
-            audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufSize);
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufSize);
             audioRecord.startRecording();
 
             handler1.post(() -> {
                 try {
                     isRecording = PRE_RECORDING;
-
-                    boolean mediaMuxerStarted = false;
-
                     int trackIndex = 0;
                     int audioTrackIndex = 1;
 
@@ -212,7 +204,6 @@ public class VideoPreRecorder {
                     long audiosBaseTimeUs = videosBaseTimeUs;
 
                     while (isRecording == PRE_RECORDING || isRecording == RECORDING) {
-
                         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                         int outputBufferIndex = videosMediaCodec.dequeueOutputBuffer(bufferInfo, 10000);
 
@@ -236,38 +227,26 @@ public class VideoPreRecorder {
                         } else if (outputBufferIndex >= 0) {
                             ByteBuffer encodedByteBuffer = videosMediaCodec.getOutputBuffer(outputBufferIndex);
                             if (encodedByteBuffer != null && bufferInfo.size > 0) {
-
                                 // 限制ByteBuffer到实际的有效数据范围
                                 encodedByteBuffer.position(bufferInfo.offset);
                                 encodedByteBuffer.limit(bufferInfo.offset + bufferInfo.size);
-
                                 ByteBuffer byteBufferCopy = ByteBuffer.allocate(encodedByteBuffer.remaining());
                                 byteBufferCopy.put(encodedByteBuffer);
                                 byteBufferCopy.flip();
-
                                 if (videosBaseTimeUs == -1) {
                                     videosBaseTimeUs = bufferInfo.presentationTimeUs;
                                 }
-
                                 MediaCodec.BufferInfo bufferInfo1 = new MediaCodec.BufferInfo();
                                 bufferInfo1.set(bufferInfo.offset, bufferInfo.size, bufferInfo.presentationTimeUs - videosBaseTimeUs, bufferInfo.flags);
-
                                 VideosCacheData videosCacheData = new VideosCacheData(bufferInfo1, byteBufferCopy, trackIndex);
-
 //                                System.out.println("------ccg timestamp 1 ----" +  System.currentTimeMillis() +  "---" + bufferInfo.presentationTimeUs);
-
                                 if (isRecording == PRE_RECORDING) {
                                     circularBuffer.add(videosCacheData);
                                 } else {
                                     count++;
                                     fifoQueue.add(videosCacheData);
                                 }
-                                // -------------------------------------------
-
-                                // 为什么更清晰呢
-//                                mediaMuxer.writeSampleData(trackIndex, encodedByteBuffer, bufferInfo);
                             }
-
                             // 释放缓冲区以便重用
                             videosMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                             // 检查 bufferInfo.flags 是否包含 MediaCodec.BUFFER_FLAG_END_OF_STREAM
@@ -279,10 +258,9 @@ public class VideoPreRecorder {
                             System.out.println("---ccg index  others ------" + outputBufferIndex);
                         }
 
-
-                        // ----------------------------------
-
-
+                        //---------------------------------------
+                        // 处理音频相关内容
+                        //---------------------------------------
                         if (audioOutputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
 //                            System.out.println("---ccg INFO_TRY_AGAIN_LATER");
 //                            continue;
@@ -308,20 +286,15 @@ public class VideoPreRecorder {
 
                                     MediaCodec.BufferInfo bufferInfo1 = new MediaCodec.BufferInfo();
                                     bufferInfo1.set(bufferInfo2.offset, bufferInfo2.size, bufferInfo2.presentationTimeUs - audiosBaseTimeUs, bufferInfo2.flags);
-
                                     VideosCacheData audiosCacheData = new VideosCacheData(bufferInfo1, byteBufferCopy, audioTrackIndex);
-
-    //                            System.out.println("------ccg timestamp 2 ----" +  System.currentTimeMillis() +  "---" + bufferInfo2.presentationTimeUs);
-
+                                    //                            System.out.println("------ccg timestamp 2 ----" +  System.currentTimeMillis() +  "---" + bufferInfo2.presentationTimeUs);
                                     if (isRecording == PRE_RECORDING) {
                                         circularBuffer.add(audiosCacheData);
                                     } else {
                                         vdCount++;
                                         fifoQueue.add(audiosCacheData);
                                     }
-
                                 }
-
 //                            mediaMuxer.writeSampleData(audioTrackIndex, encodedAudioData, bufferInfo2);
                             }
 
@@ -359,7 +332,7 @@ public class VideoPreRecorder {
 
             for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
                 MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
-                System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
+//                System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
                 mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
             }
 
@@ -367,7 +340,7 @@ public class VideoPreRecorder {
                 VideosCacheData videosCacheData;
                 try {
                     videosCacheData = fifoQueue.take();
-                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg fifoQueue ----" + videosCacheData.getBufferInfo().presentationTimeUs);
+//                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg fifoQueue ----" + videosCacheData.getBufferInfo().presentationTimeUs);
                     mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -383,35 +356,33 @@ public class VideoPreRecorder {
      * 停止录制
      */
     public void stopNewRecording(MainActivity activity) {
-        handler3.post(() -> {
+        // 暂时不需要 handle 异步
+//        handler3.post(() -> {
 
-            isRecording = STOP_RECORDING;
-
-            handlerThread2.quit();
-            System.out.println("------ccg  预录size:" + circularBuffer.size());
-            System.out.println("-------ccg 录像count " + count);
-            System.out.println("--------ccg 音频vdcount " + vdCount);
             try {
-                audioRecord.stop();
+                isRecording = STOP_RECORDING;
 
-                audioMediaCodec.release();
-                videosMediaCodec.release();
+                // 不需要关闭
+//                handlerThread2.quitSafely();
+//                System.out.println("------ccg  预录size:" + circularBuffer.size());
+//                System.out.println("-------ccg 录像count " + count);
+//                System.out.println("--------ccg 音频vdcount " + vdCount);
+                try {
+//                    audioRecord.stop();
+                    audioRecord.release();
+                    audioMediaCodec.release();
+                    videosMediaCodec.release();
+    //            mediaCodec.stop();
+                    // 需要释放否则文件不全
+                    mediaMuxer.release();
+    //            mediaMuxer.stop();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-//            mediaCodec.stop();
-
-
-                // 需要释放否则文件不全
-                mediaMuxer.release();
-//            mediaMuxer.stop();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            surfaces.clear();
-
-            circularBuffer.clear();
-
-            fifoQueue.clear();
+                surfaces.clear();
+                circularBuffer.clear();
+                fifoQueue.clear();
 
             /*//停止后，将视频从内部目录copy到公共目录
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
@@ -445,8 +416,11 @@ public class VideoPreRecorder {
             } catch (Exception e) {
                 e.printStackTrace();
             }*/
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        });
+//        });
 
     }
 

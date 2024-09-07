@@ -2404,6 +2404,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
             subtitleVideoTimerTask = null;
         }
 
+        // 更新视频文件为已处理完成
         completeVideo(video_method, uri);
         boolean done = broadcastVideo(video_method, uri, filename);
         if( MyDebug.LOG )

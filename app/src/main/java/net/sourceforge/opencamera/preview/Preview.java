@@ -1220,6 +1220,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         applicationInterface.cameraInOperation(false, true);
         reconnectCamera(false); // n.b., if something went wrong with video, then we reopen the camera - which may fail (or simply not reopen, e.g., if app is now paused)
         videoFileInfo.close();
+
         applicationInterface.stoppedVideo(videoFileInfo.video_method, videoFileInfo.video_uri, videoFileInfo.video_filename);
         if( nextVideoFileInfo != null ) {
             // if nextVideoFileInfo is not-null, it means we received MEDIA_RECORDER_INFO_MAX_FILESIZE_APPROACHING but not
@@ -1246,6 +1247,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 Log.d(TAG, "video wasn't recording anyway");
             return;
         }
+        // 拍摄按钮等重置
         applicationInterface.stoppingVideo();
         if( flashVideoTimerTask != null ) {
             flashVideoTimerTask.cancel();
@@ -5439,6 +5441,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             else {
                 if (videos_pre_recording == PRE_RECORDING_MODE) {
                     stopVideo2(false);
+                    pre_record_status = PREPARE_PRE_REC;
                 } else {
                     stopVideo(false);
                 }
@@ -6220,7 +6223,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 showToast(null, R.string.permission_record_audio_not_available, true);
             }
             MainActivity mActivity = (MainActivity) this.getContext();
-            videoPreRecorder.startPreRecord(mActivity, videoFileInfo.video_pfd_saf.getFileDescriptor());
+            videoPreRecorder.startPreRecord(mActivity, profile, videoFileInfo.video_pfd_saf.getFileDescriptor());
 
             // todo ccg 位置信息后期再扩展
 //            boolean store_location = applicationInterface.getGeotaggingPref();
