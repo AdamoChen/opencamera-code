@@ -302,6 +302,11 @@ public class PreferenceKeys {
 
     public static final String VideoStabilizationPreferenceKey = "preference_video_stabilization";
 
+    /**
+     * 启用预录功能key
+     */
+    public static final String PreferenceVideoPreRecording = "preference_video_pre_recording";
+
     public static final String ForceVideo4KPreferenceKey = "preference_force_video_4k";
 
     public static final String VideoFormatPreferenceKey = "preference_video_output_format";

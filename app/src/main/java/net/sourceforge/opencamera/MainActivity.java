@@ -3969,9 +3969,11 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
 
 
         // keep screen active - see http://stackoverflow.com/questions/2131948/force-screen-on
+        // 配置的开关
         if( sharedPreferences.getBoolean(PreferenceKeys.KeepDisplayOnPreferenceKey, true) ) {
             if( MyDebug.LOG )
                 Log.d(TAG, "do keep screen on");
+            // 控制屏幕常亮
             this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
         else {

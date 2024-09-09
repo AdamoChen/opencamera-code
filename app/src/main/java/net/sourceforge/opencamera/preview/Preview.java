@@ -5439,7 +5439,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                     Log.d(TAG, "ignore pressing stop video too quickly after start");
             }
             else {
-                if (videos_pre_recording == PRE_RECORDING_MODE) {
+                if (applicationInterface.getVideoPreRecordingPref()) {
                     stopVideo2(false);
                     pre_record_status = PREPARE_PRE_REC;
                 } else {
@@ -5736,14 +5736,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         applicationInterface.onVideoError(what, extra); // call this last, so that toasts show up properly (as we're hogging the UI thread here, and mediarecorder takes time to stop)
     }
 
-    /** ccg 标识
-     *  预录开关标志 1 为开启了预录
-     */
-    private static final int STANDARD_RECORDING_MODE = 0;
-    private static final int PRE_RECORDING_MODE = 1;
-    private static int videos_pre_recording = PRE_RECORDING_MODE;
-
-
     private static final int PRE_REC_INVALID  = 0;
     private static final int PREPARE_PRE_REC = 1;
     private static final int PRE_REC = 2;
@@ -5819,19 +5811,19 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             if( MyDebug.LOG )
                 Log.d(TAG, "start video recording");
 
-           // 根据模式判断
-            if (videos_pre_recording == STANDARD_RECORDING_MODE) {
-                startVideoRecording(max_filesize_restart);
-            } else if (videos_pre_recording == PRE_RECORDING_MODE) {
+            // 根据模式判断
+            if (applicationInterface.getVideoPreRecordingPref()) {
                 // 判断处理预录的哪个阶段
                 if (pre_record_status == PREPARE_PRE_REC) {
                     startVideoPreRecording(max_filesize_restart);
                     pre_record_status = PRE_REC;
-                } else if (pre_record_status == PRE_REC){
+                } else if (pre_record_status == PRE_REC) {
                     startVideoPreRecording2Rec(max_filesize_restart);
                     // 表示已经在形式录制
                     pre_record_status = REC;
                 }
+            } else {
+                startVideoRecording(max_filesize_restart);
             }
             return;
         }

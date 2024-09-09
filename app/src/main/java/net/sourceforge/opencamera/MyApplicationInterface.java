@@ -704,6 +704,11 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     }
 
     @Override
+    public boolean getVideoPreRecordingPref() {
+        return sharedPreferences.getBoolean(PreferenceKeys.PreferenceVideoPreRecording, false);
+    }
+
+    @Override
     public boolean getForce4KPref() {
         return cameraId == 0 && sharedPreferences.getBoolean(PreferenceKeys.ForceVideo4KPreferenceKey, false) && main_activity.supportsForceVideo4K();
     }
@@ -2048,6 +2053,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     @Override
     public void startingPreVideo() {
         if( sharedPreferences.getBoolean(PreferenceKeys.LockVideoPreferenceKey, false) ) {
+            // 防止误解 预览界面锁屏 滑动才能解锁
             main_activity.lockScreen();
         }
         main_activity.stopAudioListeners(); // important otherwise MediaRecorder will fail to start() if we have an audiolistener! Also don't want to have the speech recognizer going off

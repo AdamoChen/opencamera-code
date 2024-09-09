@@ -120,6 +120,11 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
     }
 
     @Override
+    public boolean getVideoPreRecordingPref() {
+        return false;
+    }
+
+    @Override
     public boolean getForce4KPref() {
         return false;
     }
