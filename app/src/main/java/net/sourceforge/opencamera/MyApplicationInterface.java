@@ -2346,19 +2346,39 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     public void startedVideo() {
         if( MyDebug.LOG )
             Log.d(TAG, "startedVideo()");
-        if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
-            if( !( main_activity.getMainUI().inImmersiveMode() && main_activity.usingKitKatImmersiveModeEverything() ) ) {
-                View pauseVideoButton = main_activity.findViewById(R.id.pause_video);
-                pauseVideoButton.setVisibility(View.VISIBLE);
+        // 预录模式下不展示拍照 暂停按钮
+        if (!getVideoPreRecordingPref()) {
+            if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+                if( !( main_activity.getMainUI().inImmersiveMode() && main_activity.usingKitKatImmersiveModeEverything() ) ) {
+                    View pauseVideoButton = main_activity.findViewById(R.id.pause_video);
+                    pauseVideoButton.setVisibility(View.VISIBLE);
+                }
+                main_activity.getMainUI().setPauseVideoContentDescription();
             }
-            main_activity.getMainUI().setPauseVideoContentDescription();
-        }
-        if( main_activity.getPreview().supportsPhotoVideoRecording() && this.usePhotoVideoRecording() ) {
-            if( !( main_activity.getMainUI().inImmersiveMode() && main_activity.usingKitKatImmersiveModeEverything() ) ) {
-                View takePhotoVideoButton = main_activity.findViewById(R.id.take_photo_when_video_recording);
-                takePhotoVideoButton.setVisibility(View.VISIBLE);
+            if( main_activity.getPreview().supportsPhotoVideoRecording() && this.usePhotoVideoRecording() ) {
+                if( !( main_activity.getMainUI().inImmersiveMode() && main_activity.usingKitKatImmersiveModeEverything() ) ) {
+                    View takePhotoVideoButton = main_activity.findViewById(R.id.take_photo_when_video_recording);
+                    takePhotoVideoButton.setVisibility(View.VISIBLE);
+                }
             }
+        } else {
+            // 相册 设置按钮都要隐藏
+            View galleryBtn = main_activity.findViewById(R.id.gallery);
+            galleryBtn.setEnabled(false);
+//            galleryBtn.setVisibility(View.INVISIBLE);
+
+            View settingsBtn = main_activity.findViewById(R.id.settings);
+//            settingsBtn.setVisibility(View.INVISIBLE);
+            settingsBtn.setEnabled(false);
+
+//            View zoomBtn = main_activity.findViewById(R.id.zoom);
+////            zoomBtn.setVisibility(View.INVISIBLE);
+//            zoomBtn.setEnabled(false);
+//
+//            View zoom_seekbarBtn = main_activity.findViewById(R.id.zoom_seekbar);
+////            zoom_seekbarBtn.setVisibility(View.INVISIBLE);
         }
+
         if( main_activity.getMainUI().isExposureUIOpen() ) {
             if( MyDebug.LOG )
                 Log.d(TAG, "need to update exposure UI for start video recording");
@@ -2392,6 +2412,24 @@ public class MyApplicationInterface extends BasicApplicationInterface {
             Log.d(TAG, "uri " + uri);
             Log.d(TAG, "filename " + filename);
         }
+        // 如果是预录模式
+        if (getVideoPreRecordingPref()) {
+            // 相册 设置按钮都要隐藏
+            View galleryBtn = main_activity.findViewById(R.id.gallery);
+//            galleryBtn.setVisibility(View.VISIBLE);
+            galleryBtn.setEnabled(true);
+
+            View settingsBtn = main_activity.findViewById(R.id.settings);
+//            settingsBtn.setVisibility(View.VISIBLE);
+            settingsBtn.setEnabled(true);
+
+//            View zoomBtn = main_activity.findViewById(R.id.zoom);
+//            zoomBtn.setVisibility(View.VISIBLE);
+//
+//            View zoom_seekbarBtn = main_activity.findViewById(R.id.zoom_seekbar);
+//            zoom_seekbarBtn.setVisibility(View.VISIBLE);
+        }
+
         View pauseVideoButton = main_activity.findViewById(R.id.pause_video);
         pauseVideoButton.setVisibility(View.GONE);
         View takePhotoVideoButton = main_activity.findViewById(R.id.take_photo_when_video_recording);
