@@ -30,6 +30,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 //import android.location.Address; // don't use until we have info for data privacy!
 //import android.location.Geocoder; // don't use until we have info for data privacy!
@@ -2364,12 +2365,13 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         } else {
             // 相册 设置按钮都要隐藏
             View galleryBtn = main_activity.findViewById(R.id.gallery);
-            galleryBtn.setEnabled(false);
-//            galleryBtn.setVisibility(View.INVISIBLE);
+//            galleryBtn.setEnabled(false);
+            galleryBtn.setVisibility(View.INVISIBLE);
 
-            View settingsBtn = main_activity.findViewById(R.id.settings);
+            ImageButton settingsBtn = main_activity.findViewById(R.id.settings);
 //            settingsBtn.setVisibility(View.INVISIBLE);
             settingsBtn.setEnabled(false);
+            settingsBtn.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
 
 //            View zoomBtn = main_activity.findViewById(R.id.zoom);
 ////            zoomBtn.setVisibility(View.INVISIBLE);
@@ -2414,18 +2416,25 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         }
         // 如果是预录模式
         if (getVideoPreRecordingPref()) {
-            // 相册 设置按钮都要隐藏
-            View galleryBtn = main_activity.findViewById(R.id.gallery);
-//            galleryBtn.setVisibility(View.VISIBLE);
-            galleryBtn.setEnabled(true);
+            ImageButton view = main_activity.findViewById(R.id.take_photo);
+            // 开关状态要设置为取消
+            view.setPressed(false);
+            view.setImageResource(R.drawable.take_video_selector);
+            view.setContentDescription( getContext().getResources().getString(R.string.start_video) );
+            view.setTag(R.drawable.take_video_selector); // for testing
 
-            View settingsBtn = main_activity.findViewById(R.id.settings);
+            // 相册 设置按钮都要重新展示
+            View galleryBtn = main_activity.findViewById(R.id.gallery);
+            galleryBtn.setVisibility(View.VISIBLE);
+//            galleryBtn.setEnabled(true);
+
+            ImageButton settingsBtn = main_activity.findViewById(R.id.settings);
 //            settingsBtn.setVisibility(View.VISIBLE);
             settingsBtn.setEnabled(true);
+            settingsBtn.clearColorFilter();
 
 //            View zoomBtn = main_activity.findViewById(R.id.zoom);
 //            zoomBtn.setVisibility(View.VISIBLE);
-//
 //            View zoom_seekbarBtn = main_activity.findViewById(R.id.zoom_seekbar);
 //            zoom_seekbarBtn.setVisibility(View.VISIBLE);
         }
