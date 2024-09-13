@@ -1,5 +1,9 @@
 package net.sourceforge.opencamera.preview;
 
+import static net.sourceforge.opencamera.MyApplicationInterface.PREPARE_PRE_REC;
+import static net.sourceforge.opencamera.MyApplicationInterface.PRE_REC;
+import static net.sourceforge.opencamera.MyApplicationInterface.REC;
+
 import net.sourceforge.opencamera.HDRProcessor;
 import net.sourceforge.opencamera.JavaImageFunctions;
 import net.sourceforge.opencamera.JavaImageProcessing;
@@ -5441,7 +5445,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             else {
                 if (applicationInterface.getVideoPreRecordingPref()) {
                     stopVideo2(false);
-                    pre_record_status = PREPARE_PRE_REC;
+                    applicationInterface.setPreRecordingStatus(PREPARE_PRE_REC);
                 } else {
                     stopVideo(false);
                 }
@@ -5736,16 +5740,6 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         applicationInterface.onVideoError(what, extra); // call this last, so that toasts show up properly (as we're hogging the UI thread here, and mediarecorder takes time to stop)
     }
 
-    private static final int PRE_REC_INVALID  = 0;
-    private static final int PREPARE_PRE_REC = 1;
-    private static final int PRE_REC = 2;
-    private static final int REC = 3;
-
-    /**
-     * 预录视频的状态值  0无效 1准备预录（停止后也是在此状态）2开始预录 3正式录像
-     */
-    private int pre_record_status = 1;
-
     /** Initiate "take picture" command. In video mode this means starting video command. In photo mode this may involve first
      * autofocusing.
      * @param photo_snapshot If true, then the user has requested taking a photo whilst video
@@ -5814,13 +5808,13 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             // 根据模式判断
             if (applicationInterface.getVideoPreRecordingPref()) {
                 // 判断处理预录的哪个阶段
-                if (pre_record_status == PREPARE_PRE_REC) {
+                if (applicationInterface.getPreRecordingStatus() == PREPARE_PRE_REC) {
                     startVideoPreRecording(max_filesize_restart);
-                    pre_record_status = PRE_REC;
-                } else if (pre_record_status == PRE_REC) {
+                    applicationInterface.setPreRecordingStatus(PRE_REC);
+                } else if (applicationInterface.getPreRecordingStatus() == PRE_REC) {
                     startVideoPreRecording2Rec(max_filesize_restart);
                     // 表示已经在形式录制
-                    pre_record_status = REC;
+                    applicationInterface.setPreRecordingStatus(REC);
                 }
             } else {
                 startVideoRecording(max_filesize_restart);
@@ -9078,7 +9072,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
     public boolean isVideoRecording() {
         // 预录时实现不一样 判断是否已经正式录像
-        boolean pre2Recording = videoPreRecorder != null && pre_record_status == REC;
+        boolean pre2Recording = videoPreRecorder != null && applicationInterface.getPreRecordingStatus() == REC;
         return (pre2Recording || video_recorder != null) && video_start_time_set;
     }
 

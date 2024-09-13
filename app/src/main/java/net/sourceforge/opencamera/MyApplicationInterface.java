@@ -2065,6 +2065,29 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         main_activity.getMainUI().destroyPopup(); // as the available popup options change while recording video
     }
 
+    /**
+     * 预录状态
+     */
+    public static final int PRE_REC_INVALID  = 0;
+    public static final int PREPARE_PRE_REC = 1;
+    public static final int PRE_REC = 2;
+    public static final int REC = 3;
+
+    /**
+     * 预录视频的状态值  0无效 1准备预录（停止后也是在此状态）2开始预录 3正式录像
+     */
+    private int pre_record_status = 1;
+
+    @Override
+    public int getPreRecordingStatus() {
+        return pre_record_status;
+    }
+
+    @Override
+    public void setPreRecordingStatus(int status) {
+        this.pre_record_status = status;
+    }
+
     private void startVideoSubtitlesTask(final VideoMethod video_method) {
         final String preference_stamp_dateformat = this.getStampDateFormatPref();
         final String preference_stamp_timeformat = this.getStampTimeFormatPref();

@@ -204,7 +204,8 @@ public interface ApplicationInterface {
 
     // 预录相关接口
     void startingPreVideo();
-
+    int getPreRecordingStatus();
+    void setPreRecordingStatus(int status);
 
     void restartedVideo(final VideoMethod video_method, final Uri uri, final String filename); // called after a seamless restart (supported on Android 8+) has occurred - in this case stoppedVideo() is only called for the final video file; this method is instead called for all earlier video file segments
     void deleteUnusedVideo(final VideoMethod video_method, final Uri uri, final String filename); // application should delete the requested video (which will correspond to a video file previously returned via the createOutputVideo*() methods), either because it is corrupt or unused

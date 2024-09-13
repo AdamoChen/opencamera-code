@@ -443,6 +443,16 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
     }
 
     @Override
+    public int getPreRecordingStatus() {
+        return -1;
+    }
+
+    @Override
+    public void setPreRecordingStatus(int status) {
+
+    }
+
+    @Override
     public void startedVideo() {
 
     }
