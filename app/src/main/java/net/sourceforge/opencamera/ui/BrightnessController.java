@@ -48,6 +48,11 @@ public class BrightnessController {
         });
     }
 
+    public void resetScreenBrightness() {
+        handler.removeCallbacksAndMessages(null);
+        setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE);
+    }
+
     /**
      * 延迟调低亮度
      */
@@ -61,6 +66,7 @@ public class BrightnessController {
     public void recoverScreenBrightness() {
         // 替换为你的相机视图ID
         View cameraView = activity.findViewById(R.id.locker);
+        cameraView.setOnTouchListener(null);
         cameraView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {

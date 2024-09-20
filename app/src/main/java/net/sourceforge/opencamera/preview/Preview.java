@@ -1177,6 +1177,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                 Log.d(TAG, "video wasn't recording anyway");
             return;
         }
+
+        MainActivity mActivity = (MainActivity) this.getContext();
+        mActivity.brightnessController.resetScreenBrightness();
+
         // 重设拍摄按钮等
         applicationInterface.stoppingVideo();
         if( flashVideoTimerTask != null ) {
@@ -1194,7 +1198,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             if( MyDebug.LOG )
                 Log.d(TAG, "stop video recording");
             try {
-                MainActivity mActivity = (MainActivity) this.getContext();
+//                MainActivity mActivity = (MainActivity) this.getContext();
                 videoPreRecorder.stopNewRecording(mActivity);
             }
             catch(RuntimeException e) {
@@ -6289,6 +6293,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         try {
             // 设置展示状态  UI元素调整 比如展示 界面按钮 相关信息
             applicationInterface.cameraInOperation(true, true);
+            // 正式录像提示音
+            camera_controller.initVideoRecorderPrePrepare(null);
             told_app_starting = true;
             // 调整录像按钮 释放录音监听
             applicationInterface.startingVideo();
