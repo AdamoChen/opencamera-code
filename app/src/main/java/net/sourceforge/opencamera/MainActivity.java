@@ -6,6 +6,7 @@ import net.sourceforge.opencamera.cameracontroller.CameraControllerManager2;
 import net.sourceforge.opencamera.preview.Preview;
 import net.sourceforge.opencamera.preview.VideoProfile;
 import net.sourceforge.opencamera.remotecontrol.BluetoothRemoteControl;
+import net.sourceforge.opencamera.ui.BrightnessController;
 import net.sourceforge.opencamera.ui.DrawPreview;
 import net.sourceforge.opencamera.ui.FolderChooserDialog;
 import net.sourceforge.opencamera.ui.MainUI;
@@ -66,6 +67,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.provider.Settings;
 import android.renderscript.RenderScript;
 import android.speech.tts.TextToSpeech;
 
@@ -217,6 +219,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
     // whether to lock to landscape orientation, or allow switching between portrait and landscape orientations
     //public static final boolean lock_to_landscape = true;
     public static final boolean lock_to_landscape = false;
+
+    public BrightnessController brightnessController;
 
     // handling for lock_to_landscape==false:
 
@@ -376,6 +380,10 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
 
         // set up the camera and its preview
         preview = new Preview(applicationInterface, (this.findViewById(R.id.preview)));
+        // init
+        brightnessController = new BrightnessController(this, applicationInterface);
+        brightnessController.recoverScreenBrightness();
+
         if( MyDebug.LOG )
             Log.d(TAG, "onCreate: time after creating preview: " + (System.currentTimeMillis() - debug_time));
 

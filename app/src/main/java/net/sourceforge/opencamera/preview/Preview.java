@@ -5807,6 +5807,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
             // 根据模式判断
             if (applicationInterface.getVideoPreRecordingPref()) {
+
+                MainActivity mActivity = (MainActivity) this.getContext();
+                // 降低亮度
+                mActivity.brightnessController.delaySetScreenMinBrightness();
                 // 判断处理预录的哪个阶段
                 if (applicationInterface.getPreRecordingStatus() == PREPARE_PRE_REC) {
                     startVideoPreRecording(max_filesize_restart);
