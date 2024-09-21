@@ -1,5 +1,9 @@
 package net.sourceforge.opencamera;
 
+import static net.sourceforge.opencamera.MyApplicationInterface.PREPARE_PRE_REC;
+import static net.sourceforge.opencamera.MyApplicationInterface.PRE_REC;
+import static net.sourceforge.opencamera.MyApplicationInterface.REC;
+
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.CameraControllerManager;
 import net.sourceforge.opencamera.cameracontroller.CameraControllerManager2;
@@ -67,7 +71,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.provider.Settings;
 import android.renderscript.RenderScript;
 import android.speech.tts.TextToSpeech;
 
@@ -242,7 +245,12 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
     private long cached_display_rotation_time_ms;
     private int cached_display_rotation;
 
-
+    private boolean isPreRecordingAndRec() {
+        if (applicationInterface == null) {
+            return false;
+        }
+        return applicationInterface.getPreRecordingStatus() == PRE_REC || applicationInterface.getPreRecordingStatus() == REC;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -255,6 +263,11 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         if( MyDebug.LOG )
             Log.d(TAG, "activity_count: " + activity_count);
         super.onCreate(savedInstanceState);
+
+        if (isPreRecordingAndRec()) {
+            activity_count--;
+            return;
+        }
 
         setContentView(R.layout.activity_main);
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false); // initialise any unset preferences to their default values
@@ -1256,75 +1269,81 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             Log.d(TAG, "onStop");
         super.onStop();
 
+        if (isPreRecordingAndRec()) {
+            return;
+        }
+
         // we stop location listening in onPause, but done here again just to be certain!
         applicationInterface.getLocationSupplier().freeLocationListeners();
     }
 
     @Override
     protected void onDestroy() {
-        if( MyDebug.LOG ) {
-            Log.d(TAG, "onDestroy");
-            Log.d(TAG, "size of preloaded_bitmap_resources: " + preloaded_bitmap_resources.size());
-        }
-        activity_count--;
-        if( MyDebug.LOG )
-            Log.d(TAG, "activity_count: " + activity_count);
-
-        // should do asap before waiting for images to be saved - as risk the application will be killed whilst waiting for that to happen,
-        // and we want to avoid notifications hanging around
-        cancelImageSavingNotification();
-
-        if( want_no_limits && navigation_gap != 0 ) {
+        if (!isPreRecordingAndRec()) {
+            if( MyDebug.LOG ) {
+                Log.d(TAG, "onDestroy");
+                Log.d(TAG, "size of preloaded_bitmap_resources: " + preloaded_bitmap_resources.size());
+            }
+            activity_count--;
             if( MyDebug.LOG )
-                Log.d(TAG, "clear FLAG_LAYOUT_NO_LIMITS");
-            // it's unclear why this matters - but there is a bug when exiting split-screen mode, if the split-screen mode had set want_no_limits:
-            // even though the application is created when leaving split-screen mode, we still end up with the window flags for showing
-            // under the navigation bar!
-            // update: this issue is also fixed by not allowing want_no_limits mode in multi-window mode, but still good to reset things here
-            // just in case
-            showUnderNavigation(false);
-        }
+                Log.d(TAG, "activity_count: " + activity_count);
 
-        // reduce risk of losing any images
-        // we don't do this in onPause or onStop, due to risk of ANRs
-        // note that even if we did call this earlier in onPause or onStop, we'd still want to wait again here: as it can happen
-        // that a new image appears after onPause/onStop is called, in which case we want to wait until images are saved,
-        // otherwise we can have crash if we need Renderscript after calling releaseAllContexts(), or because rs has been set to
-        // null from beneath applicationInterface.onDestroy()
-        waitUntilImageQueueEmpty();
+            // should do asap before waiting for images to be saved - as risk the application will be killed whilst waiting for that to happen,
+            // and we want to avoid notifications hanging around
+            cancelImageSavingNotification();
 
-        preview.onDestroy();
-        if( applicationInterface != null ) {
-            applicationInterface.onDestroy();
-        }
-        if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity_count == 0 ) {
-            // See note in HDRProcessor.onDestroy() - but from Android M, renderscript contexts are released with releaseAllContexts()
-            // doc for releaseAllContexts() says "If no contexts have been created this function does nothing"
-            // Important to only do so if no other activities are running (see activity_count). Otherwise risk
-            // of crashes if one activity is destroyed when another instance is still using Renderscript. I've
-            // been unable to reproduce this, though such RSInvalidStateException crashes from Google Play.
-            if( MyDebug.LOG )
-                Log.d(TAG, "release renderscript contexts");
-            RenderScript.releaseAllContexts();
-        }
-        // Need to recycle to avoid out of memory when running tests - probably good practice to do anyway
-        for(Map.Entry<Integer, Bitmap> entry : preloaded_bitmap_resources.entrySet()) {
-            if( MyDebug.LOG )
-                Log.d(TAG, "recycle: " + entry.getKey());
-            entry.getValue().recycle();
-        }
-        preloaded_bitmap_resources.clear();
-        if( textToSpeech != null ) {
-            // http://stackoverflow.com/questions/4242401/tts-error-leaked-serviceconnection-android-speech-tts-texttospeech-solved
-            if( MyDebug.LOG )
-                Log.d(TAG, "free textToSpeech");
-            textToSpeech.stop();
-            textToSpeech.shutdown();
-            textToSpeech = null;
-        }
+            if( want_no_limits && navigation_gap != 0 ) {
+                if( MyDebug.LOG )
+                    Log.d(TAG, "clear FLAG_LAYOUT_NO_LIMITS");
+                // it's unclear why this matters - but there is a bug when exiting split-screen mode, if the split-screen mode had set want_no_limits:
+                // even though the application is created when leaving split-screen mode, we still end up with the window flags for showing
+                // under the navigation bar!
+                // update: this issue is also fixed by not allowing want_no_limits mode in multi-window mode, but still good to reset things here
+                // just in case
+                showUnderNavigation(false);
+            }
 
-        // we stop location listening in onPause, but done here again just to be certain!
-        applicationInterface.getLocationSupplier().freeLocationListeners();
+            // reduce risk of losing any images
+            // we don't do this in onPause or onStop, due to risk of ANRs
+            // note that even if we did call this earlier in onPause or onStop, we'd still want to wait again here: as it can happen
+            // that a new image appears after onPause/onStop is called, in which case we want to wait until images are saved,
+            // otherwise we can have crash if we need Renderscript after calling releaseAllContexts(), or because rs has been set to
+            // null from beneath applicationInterface.onDestroy()
+            waitUntilImageQueueEmpty();
+
+            preview.onDestroy();
+            if( applicationInterface != null ) {
+                applicationInterface.onDestroy();
+            }
+            if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity_count == 0 ) {
+                // See note in HDRProcessor.onDestroy() - but from Android M, renderscript contexts are released with releaseAllContexts()
+                // doc for releaseAllContexts() says "If no contexts have been created this function does nothing"
+                // Important to only do so if no other activities are running (see activity_count). Otherwise risk
+                // of crashes if one activity is destroyed when another instance is still using Renderscript. I've
+                // been unable to reproduce this, though such RSInvalidStateException crashes from Google Play.
+                if( MyDebug.LOG )
+                    Log.d(TAG, "release renderscript contexts");
+                RenderScript.releaseAllContexts();
+            }
+            // Need to recycle to avoid out of memory when running tests - probably good practice to do anyway
+            for(Map.Entry<Integer, Bitmap> entry : preloaded_bitmap_resources.entrySet()) {
+                if( MyDebug.LOG )
+                    Log.d(TAG, "recycle: " + entry.getKey());
+                entry.getValue().recycle();
+            }
+            preloaded_bitmap_resources.clear();
+            if( textToSpeech != null ) {
+                // http://stackoverflow.com/questions/4242401/tts-error-leaked-serviceconnection-android-speech-tts-texttospeech-solved
+                if( MyDebug.LOG )
+                    Log.d(TAG, "free textToSpeech");
+                textToSpeech.stop();
+                textToSpeech.shutdown();
+                textToSpeech = null;
+            }
+
+            // we stop location listening in onPause, but done here again just to be certain!
+            applicationInterface.getLocationSupplier().freeLocationListeners();
+        }
 
         super.onDestroy();
         if( MyDebug.LOG )
@@ -1522,6 +1541,11 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             debug_time = System.currentTimeMillis();
         }
         super.onResume();
+
+        if (isPreRecordingAndRec()) {
+            return;
+        }
+
         this.app_is_paused = false; // must be set before initLocation() at least
 
         // this is intentionally true, not false, as the uncovering happens in DrawPreview when we receive frames from the camera after it's opened
@@ -1672,6 +1696,11 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             debug_time = System.currentTimeMillis();
         }
         super.onPause(); // docs say to call this before freeing other things
+
+        if (isPreRecordingAndRec()) {
+            return;
+        }
+
         this.app_is_paused = true;
 
         mainUI.destroyPopup(); // important as user could change/reset settings from Android settings when pausing
@@ -5373,7 +5402,13 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         if( MyDebug.LOG )
             Log.d(TAG, "onSaveInstanceState");
         super.onSaveInstanceState(state);
+
+        if (isPreRecordingAndRec()) {
+            return;
+        }
+
         if( this.preview != null ) {
+            // 啥也没做
             preview.onSaveInstanceState(state);
         }
         if( this.applicationInterface != null ) {

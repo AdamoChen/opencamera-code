@@ -43,10 +43,11 @@
         android:largeHeap="true"
         >
         <!-- should not change the android:name, including moving to a subpackage - see http://android-developers.blogspot.co.uk/2011/06/things-that-cannot-change.html -->
+<!--            android:clearTaskOnLaunch="true"-->
         <activity
             android:name="net.sourceforge.opencamera.MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTask"
             android:exported="true"
             >
             <!-- clearTaskOnLaunch set to true, so if user goes to gallery then returns to home, we return to the camera rather than remaining in gallery if user relaunches Open Camera -->
