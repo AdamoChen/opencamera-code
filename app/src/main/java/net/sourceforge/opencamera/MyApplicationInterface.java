@@ -156,7 +156,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     private final static float aperture_default = -1.0f;
     private float aperture = aperture_default;
     // camera properties that aren't saved even in the bundle; these should be initialised/reset in reset()
-    private int zoom_factor = -1; // don't save zoom, as doing so tends to confuse users; other camera applications don't seem to save zoom when pause/resuming
+    private int zoom_factor = 0; // don't save zoom, as doing so tends to confuse users; other camera applications don't seem to save zoom when pause/resuming
 
     // for testing:
     public volatile int test_n_videos_scanned;
@@ -706,7 +706,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
 
     @Override
     public boolean getVideoPreRecordingPref() {
-        return sharedPreferences.getBoolean(PreferenceKeys.PreferenceVideoPreRecording, false);
+        return sharedPreferences.getBoolean(PreferenceKeys.PreferenceVideoPreRecording, true);
     }
 
     @Override
@@ -3187,7 +3187,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
             // aperture is reset when switching camera, but not when application is paused or switching between photo/video etc
             this.aperture = aperture_default;
         }
-        this.zoom_factor = -1;
+        this.zoom_factor = 0;
     }
 
     @Override
