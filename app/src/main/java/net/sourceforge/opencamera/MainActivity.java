@@ -1530,9 +1530,6 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
 
         applicationInterface.getDrawPreview().clearDimPreview(); // shouldn't be needed, but just in case the dim preview flag got set somewhere
 
-        // 从其他页面切回来时要重新设置
-        brightnessController.recoverScreenBrightness();
-
         cancelImageSavingNotification();
 
         // Set black window background; also needed if we hide the virtual buttons in immersive mode

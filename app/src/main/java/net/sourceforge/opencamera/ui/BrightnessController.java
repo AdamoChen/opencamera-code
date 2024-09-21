@@ -65,7 +65,7 @@ public class BrightnessController {
      */
     public void recoverScreenBrightness() {
         // 替换为你的相机视图ID
-        View cameraView = activity.findViewById(R.id.locker);
+        View cameraView = activity.findViewById(R.id.brightness);
         cameraView.setOnTouchListener(null);
         cameraView.setOnTouchListener(new View.OnTouchListener() {
             @Override

@@ -630,6 +630,12 @@
         android:layout_height="match_parent"
         />
 
+    <FrameLayout
+        android:id="@+id/brightness"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
     <ScrollView
         android:id="@+id/popup_container"
         android:layout_width="wrap_content"
