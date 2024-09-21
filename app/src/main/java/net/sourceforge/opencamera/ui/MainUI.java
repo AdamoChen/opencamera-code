@@ -2817,7 +2817,10 @@ public class MainUI {
                 switch(volume_keys) {
                     case "volume_take_photo":
                         boolean done = false;
-                        if( keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && main_activity.getPreview().isVideoRecording() ) {
+                        if( keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                                && main_activity.getPreview().isVideoRecording()
+                                // 预录模式没有暂停功能
+                                && !main_activity.getApplicationInterface().getVideoPreRecordingPref() ) {
                             done = true;
                             main_activity.pauseVideo();
                         }
