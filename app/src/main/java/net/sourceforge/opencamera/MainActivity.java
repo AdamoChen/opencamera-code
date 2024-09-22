@@ -1541,8 +1541,14 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             debug_time = System.currentTimeMillis();
         }
         super.onResume();
+        boolean flag = true;
+        if (preview != null && preview.getCameraController() == null) {
+            preview.onErrorSaveVideo();
+             flag = false;
+        }
 
-        if (isPreRecordingAndRec()) {
+
+        if (flag && isPreRecordingAndRec()) {
             return;
         }
 

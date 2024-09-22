@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -74,7 +75,7 @@ public class VideoPreRecorder {
     private int vdCount = 0;
 
     // 目前分辨率 码率下  200 约等于5秒
-    CircularBuffer<VideosCacheData> circularBuffer = new CircularBuffer<>(200 * 10);
+    CircularBuffer<VideosCacheData> circularBuffer = new CircularBuffer<>(200 * 15);
     // 正式录制的数据缓存队列
     private final BlockingDeque<VideosCacheData> fifoQueue = new LinkedBlockingDeque<>();
     private final Object queueLock = new Object();
@@ -93,11 +94,17 @@ public class VideoPreRecorder {
 
 
     private String videoName;
+//    private boolean preVideosDataSaveDone;
+    private CountDownLatch preVideosDataSaveDoneLatch;
 
+    private boolean cameraEnable = true;
 
     public void startPreRecord(MainActivity activity, VideoProfile videoProfile, FileDescriptor fd) {
 
         try {
+            // 需要设置，
+            this.cameraEnable = true;
+
             if (!handlerThread.isAlive()) {
                 handlerThread.start();
                 // 从相机中获取数据 丢进缓存中
@@ -204,6 +211,11 @@ public class VideoPreRecorder {
                     long audiosBaseTimeUs = videosBaseTimeUs;
 
                     while (isRecording == PRE_RECORDING || isRecording == RECORDING) {
+                        // 表明相机异常， 不再拿无用的数据
+                        if (!this.cameraEnable) {
+                            break;
+                        }
+
                         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                         int outputBufferIndex = videosMediaCodec.dequeueOutputBuffer(bufferInfo, 10000);
 
@@ -329,11 +341,17 @@ public class VideoPreRecorder {
     public void startNewRecording(Activity activity) {
         handler2.post(() -> {
             isRecording = RECORDING;
+            preVideosDataSaveDoneLatch = new CountDownLatch(1);
 
-            for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
-                MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
-//                System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
-                mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
+            try {
+                for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
+                    MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
+                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
+                    mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
+                }
+            } finally {
+                // 预录数据未保存完时 就释放了组件。
+                preVideosDataSaveDoneLatch.countDown();
             }
 
             while (isRecording == RECORDING) {
@@ -360,8 +378,10 @@ public class VideoPreRecorder {
 //        handler3.post(() -> {
 
             try {
-                isRecording = STOP_RECORDING;
+                // 等待预录数据全部保存，
+                preVideosDataSaveDoneLatch.await();
 
+                isRecording = STOP_RECORDING;
                 // 不需要关闭
 //                handlerThread2.quitSafely();
 //                System.out.println("------ccg  预录size:" + circularBuffer.size());
@@ -383,6 +403,8 @@ public class VideoPreRecorder {
                 surfaces.clear();
                 circularBuffer.clear();
                 fifoQueue.clear();
+                // 中止了 结束后 需要再设置为true
+                this.cameraEnable = true;
 
             /*//停止后，将视频从内部目录copy到公共目录
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
@@ -418,6 +440,8 @@ public class VideoPreRecorder {
             }*/
             } catch (Exception e) {
                 e.printStackTrace();
+                // 中止了 结束后 需要再设置为true
+                this.cameraEnable = true;
             }
 
 //        });
@@ -429,4 +453,10 @@ public class VideoPreRecorder {
         camera_controller.initVideoPreRecorder(this);
     }
 
+    /**
+     * 底层相机出现异常时要中断数据缓存。
+     */
+    public void onCameraError() {
+        this.cameraEnable = false;
+    }
 }

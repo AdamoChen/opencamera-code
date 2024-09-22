@@ -1921,6 +1921,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                             Log.e(TAG, "set camera_controller to null");
                         camera_controller = null;
                         camera_open_state = CameraOpenState.CAMERAOPENSTATE_CLOSED;
+                        if (videoPreRecorder != null) {
+                            videoPreRecorder.onCameraError();
+                        }
                         applicationInterface.onCameraError();
                     }
                 }
@@ -5835,6 +5838,28 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             Log.d(TAG, "takePicture exit");
     }
 
+    public void onErrorSaveVideo() {
+        if (videoPreRecorder == null) {
+            return;
+        }
+
+        if (!applicationInterface.getVideoPreRecordingPref()) {
+            return;
+        }
+//        MainActivity mActivity = (MainActivity) this.getContext();
+        // 降低亮度
+//        mActivity.brightnessController.delaySetScreenMinBrightness();
+        // 判断处理预录的哪个阶段
+        if (applicationInterface.getPreRecordingStatus() == PRE_REC) {
+            startVideoPreRecording2Rec(false);
+            stopVideo2(false);
+            applicationInterface.setPreRecordingStatus(PREPARE_PRE_REC);
+        } else if (applicationInterface.getPreRecordingStatus() == REC) {
+            stopVideo2(false);
+            applicationInterface.setPreRecordingStatus(PREPARE_PRE_REC);
+        }
+    }
+
     private VideoFileInfo createVideoFile(String extension) {
         if( MyDebug.LOG )
             Log.d(TAG, "createVideoFile");
@@ -6293,8 +6318,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         try {
             // 设置展示状态  UI元素调整 比如展示 界面按钮 相关信息
             applicationInterface.cameraInOperation(true, true);
-            // 正式录像提示音
-            camera_controller.initVideoRecorderPrePrepare(null);
+            // 当相机不可用时，可能被清空，但依然需要保存数据 
+            if (camera_controller != null) {
+                // 正式录像提示音
+                camera_controller.initVideoRecorderPrePrepare(null);
+            }
             told_app_starting = true;
             // 调整录像按钮 释放录音监听
             applicationInterface.startingVideo();
