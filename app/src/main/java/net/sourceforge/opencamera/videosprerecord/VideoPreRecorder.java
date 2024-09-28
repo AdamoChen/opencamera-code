@@ -17,11 +17,16 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
 import android.view.Surface;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import com.k2fsa.sherpa.onnx.KeyWordsSpottingAction;
+import com.k2fsa.sherpa.onnx.kws.KeyWordsSpottingController;
+
 import net.sourceforge.opencamera.MainActivity;
+import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.preview.VideoProfile;
 
@@ -96,14 +101,38 @@ public class VideoPreRecorder {
     private String videoName;
 //    private boolean preVideosDataSaveDone;
     private CountDownLatch preVideosDataSaveDoneLatch;
-
+    // 相机是否可用的标志
     private boolean cameraEnable = true;
+
+    private KeyWordsSpottingController keyWordsSpottingController;
 
     public void startPreRecord(MainActivity activity, VideoProfile videoProfile, FileDescriptor fd) {
 
         try {
             // 需要设置，
             this.cameraEnable = true;
+
+            keyWordsSpottingController.startKeyWordsSpotting(activity, new KeyWordsSpottingAction() {
+                @Override
+                public void startRecording() {
+                    activity.runOnUiThread(()->{
+                        if (isRecording == PRE_RECORDING) {
+                            View takePhotoButton = activity.findViewById(R.id.take_photo);
+                            takePhotoButton.performClick();
+                        }
+                    });
+                }
+
+                @Override
+                public void stopRecording() {
+                    activity.runOnUiThread(()-> {
+                        if (isRecording == RECORDING) {
+                            View takePhotoButton = activity.findViewById(R.id.take_photo);
+                            takePhotoButton.performClick();
+                        }
+                    });
+                }
+            });
 
             if (!handlerThread.isAlive()) {
                 handlerThread.start();
@@ -263,11 +292,11 @@ public class VideoPreRecorder {
                             videosMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                             // 检查 bufferInfo.flags 是否包含 MediaCodec.BUFFER_FLAG_END_OF_STREAM
                             if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                                System.out.println("ccg 如果结束标志被设置，退出循环");
+//                                System.out.println("ccg 如果结束标志被设置，退出循环");
 //                                break;  // 如果结束标志被设置，退出循环
                             }
                         } else {
-                            System.out.println("---ccg index  others ------" + outputBufferIndex);
+//                            System.out.println("---ccg index  others ------" + outputBufferIndex);
                         }
 
                         //---------------------------------------
@@ -346,12 +375,12 @@ public class VideoPreRecorder {
             try {
                 for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
                     MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
-                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
+//                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
                     mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
                 }
             } finally {
                 // 预录数据未保存完时 就释放了组件。
-                preVideosDataSaveDoneLatch.countDown();
+                preVideosDataSaveDoneLatch.countDown(); 
             }
 
             while (isRecording == RECORDING) {
@@ -403,6 +432,9 @@ public class VideoPreRecorder {
                 surfaces.clear();
                 circularBuffer.clear();
                 fifoQueue.clear();
+
+                keyWordsSpottingController.stop();
+
                 // 中止了 结束后 需要再设置为true
                 this.cameraEnable = true;
 
@@ -451,6 +483,8 @@ public class VideoPreRecorder {
     public VideoPreRecorder(CameraController camera_controller) {
         this.camera_controller = camera_controller;
         camera_controller.initVideoPreRecorder(this);
+
+        this.keyWordsSpottingController = new KeyWordsSpottingController();
     }
 
     /**
