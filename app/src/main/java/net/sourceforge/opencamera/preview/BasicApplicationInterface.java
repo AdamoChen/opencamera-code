@@ -125,6 +125,11 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
     }
 
     @Override
+    public boolean getKeyWordsSpottingPref() {
+        return false;
+    }
+
+    @Override
     public boolean getForce4KPref() {
         return false;
     }

@@ -112,27 +112,29 @@ public class VideoPreRecorder {
             // 需要设置，
             this.cameraEnable = true;
 
-            keyWordsSpottingController.startKeyWordsSpotting(activity, new KeyWordsSpottingAction() {
-                @Override
-                public void startRecording() {
-                    activity.runOnUiThread(()->{
-                        if (isRecording == PRE_RECORDING) {
-                            View takePhotoButton = activity.findViewById(R.id.take_photo);
-                            takePhotoButton.performClick();
-                        }
-                    });
-                }
+            if (keyWordsSpottingController != null) {
+                keyWordsSpottingController.startKeyWordsSpotting(activity, new KeyWordsSpottingAction() {
+                    @Override
+                    public void startRecording() {
+                        activity.runOnUiThread(()->{
+                            if (isRecording == PRE_RECORDING) {
+                                View takePhotoButton = activity.findViewById(R.id.take_photo);
+                                takePhotoButton.performClick();
+                            }
+                        });
+                    }
 
-                @Override
-                public void stopRecording() {
-                    activity.runOnUiThread(()-> {
-                        if (isRecording == RECORDING) {
-                            View takePhotoButton = activity.findViewById(R.id.take_photo);
-                            takePhotoButton.performClick();
-                        }
-                    });
-                }
-            });
+                    @Override
+                    public void stopRecording() {
+                        activity.runOnUiThread(()-> {
+                            if (isRecording == RECORDING) {
+                                View takePhotoButton = activity.findViewById(R.id.take_photo);
+                                takePhotoButton.performClick();
+                            }
+                        });
+                    }
+                });
+            }
 
             if (!handlerThread.isAlive()) {
                 handlerThread.start();
@@ -433,7 +435,9 @@ public class VideoPreRecorder {
                 circularBuffer.clear();
                 fifoQueue.clear();
 
-                keyWordsSpottingController.stop();
+                if (this.keyWordsSpottingController != null)  {
+                    keyWordsSpottingController.stop();
+                }
 
                 // 中止了 结束后 需要再设置为true
                 this.cameraEnable = true;
@@ -483,8 +487,12 @@ public class VideoPreRecorder {
     public VideoPreRecorder(CameraController camera_controller) {
         this.camera_controller = camera_controller;
         camera_controller.initVideoPreRecorder(this);
+    }
 
-        this.keyWordsSpottingController = new KeyWordsSpottingController();
+    public void initSpeechControl() {
+        if (this.keyWordsSpottingController == null) {
+            this.keyWordsSpottingController = new KeyWordsSpottingController();
+        }
     }
 
     /**

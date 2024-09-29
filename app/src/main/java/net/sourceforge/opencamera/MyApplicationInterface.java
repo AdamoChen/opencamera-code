@@ -710,6 +710,11 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     }
 
     @Override
+    public boolean getKeyWordsSpottingPref() {
+        return sharedPreferences.getBoolean(PreferenceKeys.PreferenceVideoPreRecordingKWS, false);
+    }
+
+    @Override
     public boolean getForce4KPref() {
         return cameraId == 0 && sharedPreferences.getBoolean(PreferenceKeys.ForceVideo4KPreferenceKey, false) && main_activity.supportsForceVideo4K();
     }

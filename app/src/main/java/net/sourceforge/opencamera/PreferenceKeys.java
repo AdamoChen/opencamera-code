@@ -311,6 +311,11 @@ public class PreferenceKeys {
      */
     public static final String PreferenceVideoPreRecording = "preference_video_pre_recording";
 
+    /**
+     * 启用预录时语音控制
+     */
+    public static final String PreferenceVideoPreRecordingKWS = "preference_video_pre_recording_kws";
+
     public static final String ForceVideo4KPreferenceKey = "preference_force_video_4k";
 
     public static final String VideoFormatPreferenceKey = "preference_video_output_format";

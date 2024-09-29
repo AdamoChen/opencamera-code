@@ -195,6 +195,8 @@
     <string name="preference_video_stabilization_summary">视频稳定减少在预览和录像中由于相机移动引起的晃动。</string>
     <string name="preference_video_pre_recording">启用视频预录功能</string>
     <string name="preference_video_pre_recording_summary">首次点击录像按钮后开始预录，再次点击正式录像（刺鱼后有空再点），第三次点击结束录像，正式录像前的一小段时间也会被保存，（不会错过鱼给口的关键瞬间哦^_^）。</string>
+    <string name="preference_video_pre_recording_kws">启用语音控制拍摄功能</string>
+    <string name="preference_video_pre_recording_kws_summary">当预录开始后，发出【开始录像】语音指令即可正式录像，在正式录像后发出【结束录像】即可停止录像，仅预录模式下生效（解放正在搏鱼的双手）。</string>
     <string name="preference_video_bitrate">视频比特率 (大约)</string>
     <string name="preference_video_bitrate_summary">设置视频的大致比特率 (更高表示更好的质量，但是占用更多磁盘空间；如果比特率不被支持可能引起录像失败)\n%s</string>
     <string name="preference_video_fps">视频帧率 (大约)</string>

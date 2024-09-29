@@ -6233,6 +6233,10 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             // 构建视频预录器
             videoPreRecorder = new VideoPreRecorder(camera_controller);
 
+            if (applicationInterface.getKeyWordsSpottingPref()) {
+                videoPreRecorder.initSpeechControl();
+            }
+
             // camera2 啥也没做
             this.camera_controller.unlock();
             if( MyDebug.LOG )

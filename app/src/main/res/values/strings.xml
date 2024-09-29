@@ -204,6 +204,8 @@
     <string name="preference_video_stabilization_summary">Video stabilization reduces the shaking due to the motion of the camera in both the preview and in recorded videos. This may be unnecessary if your device supports optical image stabilization (OIS).</string>
     <string name="preference_video_pre_recording">Enable video pre-recording</string>
     <string name="preference_video_pre_recording_summary">Press the record button to start pre-recording, press again to begin the main recording, and press once more to stop and save the video from the pre-recording fixed time to the end.</string>
+    <string name="preference_video_pre_recording_kws">Enable video pre-recording speech control</string>
+    <string name="preference_video_pre_recording_kws_summary">Enable speech control recording button when pre-recording</string>
 
     <string name="preference_video_bitrate">Video bitrate (approx)</string>
     <string name="preference_video_bitrate_summary">Set the approximate bitrate of videos (higher means better quality, but takes up more disk space; may cause video recording to fail if bitrate not supported)\n%s</string>

@@ -24,6 +24,13 @@
         android:defaultValue="true"
         />
 
+    <SwitchPreference
+        android:key="preference_video_pre_recording_kws"
+        android:title="@string/preference_video_pre_recording_kws"
+        android:summary="@string/preference_video_pre_recording_kws_summary"
+        android:defaultValue="false"
+        />
+
     <ListPreference
         android:key="preference_video_output_format"
         android:title="@string/preference_video_output_format"
