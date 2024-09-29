@@ -30,7 +30,10 @@ public class BrightnessController {
     private final ApplicationInterface applicationInterface;
     private final Handler handler;
     // todo ccg 可以配置化
-    private static final long DELAY_MILLIS = 5000L;
+    /**
+     * 多少秒降低亮度
+     */
+    private static final long DELAY_MILLIS = 10000L;
 
     private final Runnable screenMinBrightnessRunnable = () -> {
         // 默认最低亮度
