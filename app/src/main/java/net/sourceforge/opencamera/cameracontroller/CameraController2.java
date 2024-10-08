@@ -317,8 +317,12 @@ public class CameraController2 extends CameraController {
     public void initVideoPreRecorder(VideoPreRecorder videoPreRecorder) {
         this.surface_texture = new Surface(texture);
         videoPreRecorder.previewSurface = surface_texture;
-//        videoPreRecorder.size =
         videoPreRecorder.mCameraDevice = camera;
+        videoPreRecorder.captureRequestBuilder = previewBuilder;
+    }
+
+    public void setCaptureSession(CameraCaptureSession captureSession) {
+        this.captureSession = captureSession;
     }
 
     private void resetCaptureResultInfo() {

@@ -15,6 +15,7 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -28,6 +29,7 @@ import com.k2fsa.sherpa.onnx.kws.KeyWordsSpottingController;
 import net.sourceforge.opencamera.MainActivity;
 import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
+import net.sourceforge.opencamera.cameracontroller.CameraController2;
 import net.sourceforge.opencamera.preview.VideoProfile;
 
 import java.io.FileDescriptor;
@@ -45,22 +47,18 @@ import java.util.concurrent.LinkedBlockingDeque;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoPreRecorder {
 
-    private CameraController camera_controller;
+    private final CameraController2 cameraController2;
 
     /**
      * 预览
      */
-//    public SurfaceView previewSurfaceView;
-//    public TextureView previewSurfaceView;
-
     public Surface previewSurface;
-
     public CameraDevice mCameraDevice;
+    public CaptureRequest.Builder captureRequestBuilder;
+
     public Size size = new Size(2560, 1440);
 
     List<Surface> surfaces = new ArrayList<>();
-    private CaptureRequest.Builder mPreviewBuilder;
-    private CameraCaptureSession mCameraCaptureSession;
 
     private MediaCodec videosMediaCodec;
     private MediaCodec audioMediaCodec;
@@ -194,35 +192,36 @@ public class VideoPreRecorder {
             audioMediaCodec.start();
 
             // 初始化 MediaMuxer
-            mediaMuxer = new MediaMuxer(fd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mediaMuxer = new MediaMuxer(fd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            }
             // 视频输出方向顺时针转90度
             mediaMuxer.setOrientationHint(90);
 
             // session
 //            Surface previewSurface = previewSurfaceView.getHolder().getSurface();
-
             // 设置 SurfaceTextureListener
             List<Surface> surfaces = Arrays.asList(previewSurface, inputSurface);
 
-            CaptureRequest.Builder captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+//            CaptureRequest.Builder captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(previewSurface);
             captureRequestBuilder.addTarget(inputSurface);
 
             mCameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
-                    mCameraCaptureSession = session;
                     try {
-                        mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, handler4);
+                        cameraController2.setCaptureSession(session);
+                        session.setRepeatingRequest(captureRequestBuilder.build(), null, handler4);
                     } catch (CameraAccessException e) {
-                        e.printStackTrace();
+                        Log.e("startPreRecord", e.getMessage(), e);
                     }
                 }
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession session) {
                     // 处理配置失败
-                    System.out.println("startPreRecordingCameraSession config error");
+                    Log.e("onConfigureFailed error", session.toString());
                 }
             }, null);
 
@@ -484,9 +483,9 @@ public class VideoPreRecorder {
 
     }
 
-    public VideoPreRecorder(CameraController camera_controller) {
-        this.camera_controller = camera_controller;
-        camera_controller.initVideoPreRecorder(this);
+    public VideoPreRecorder(CameraController cameraController2) {
+        this.cameraController2 = (CameraController2) cameraController2;
+        cameraController2.initVideoPreRecorder(this);
     }
 
     public void initSpeechControl() {
