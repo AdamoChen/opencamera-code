@@ -1,61 +1,64 @@
 package net.sourceforge.opencamera.videosprerecord;
 
-import java.util.ArrayList;
+import android.annotation.SuppressLint;
+import android.util.Log;
+
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * 循环缓存容器
- * @param <T>
  */
-public class CircularBuffer<T> {
-    private T[] buffer;
-    private int head;
-    private int tail;
-    private int maxSize;
-    private int count;
+public class CircularBuffer {
 
+    private final LinkedList<VideosCacheData> linkedList = new LinkedList<>();
+    private long preRecordingDurationUs = 45 * 1_000_000;
 
-    public CircularBuffer(int size) {
-        maxSize = size;
-        buffer = (T[]) new Object[maxSize];
-        head = 0;
-        tail = 0;
-        count = 0;
-    }
-
-    public void add(T item) {
-        buffer[tail] = item;
-        tail = (tail + 1) % maxSize;
-        if (count == maxSize) {
-            // 替换最旧的数据
-            head = (head + 1) % maxSize;
-        } else {
-            count++;
+    public CircularBuffer(long preRecordingDurationUs) {
+        if (preRecordingDurationUs > 0) {
+            this.preRecordingDurationUs = preRecordingDurationUs;
         }
     }
 
-    public List<T> getAll() {
-        List<T> list = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            list.add(buffer[(head + i) % maxSize]);
+    /**
+     * 增加并延迟过期数据
+     * @param item
+     */
+    public void addAndRemoveExpireData(VideosCacheData item) {
+        linkedList.add(item);
+        try {
+            while (!linkedList.isEmpty()) {
+                if (item.getPresentationTimeUs() - linkedList.getFirst().getPresentationTimeUs() > preRecordingDurationUs) {
+                    linkedList.removeFirst();
+                } else {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Log.e("add&RemoveExpireData er", String.valueOf(e));
         }
-        return list;
+    }
+
+    /**
+     *
+     * @param durationSecs 秒数
+     */
+    @SuppressLint("LongLogTag")
+    public void setPreRecordingDurationUs(int durationSecs) {
+        if (durationSecs <= 0) {
+            Log.e("durationSecs must be bigger than 0", String.valueOf(durationSecs));
+            return;
+        }
+        this.preRecordingDurationUs = durationSecs * 1_000_000L;
+    }
+
+    public List<VideosCacheData> getAll() {
+        return linkedList;
     }
 
     public boolean clear() {
-        buffer = null;
-        maxSize = 0;
-        head = 0;
-        tail = 0;
-        count = 0;
+        linkedList.clear();
         return true;
     }
 
-    public int size() {
-        return count;
-    }
-
-    public int capacity() {
-        return maxSize;
-    }
 }

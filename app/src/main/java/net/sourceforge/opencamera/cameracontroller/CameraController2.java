@@ -325,6 +325,10 @@ public class CameraController2 extends CameraController {
         this.captureSession = captureSession;
     }
 
+    public CameraCaptureSession getCaptureSession() {
+        return this.captureSession;
+    }
+
     private void resetCaptureResultInfo() {
         capture_result_is_ae_scanning = false;
         capture_result_ae = null;

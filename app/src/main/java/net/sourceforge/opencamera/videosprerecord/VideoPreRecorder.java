@@ -77,8 +77,8 @@ public class VideoPreRecorder {
     private int count = 0;
     private int vdCount = 0;
 
-    // 目前分辨率 码率下  200 约等于5秒
-    CircularBuffer<VideosCacheData> circularBuffer = new CircularBuffer<>(200 * 15);
+    // -1 表示缓存默认时长的数据
+    CircularBuffer circularBuffer = new CircularBuffer(-1);
     // 正式录制的数据缓存队列
     private final BlockingDeque<VideosCacheData> fifoQueue = new LinkedBlockingDeque<>();
     private final Object queueLock = new Object();
@@ -211,8 +211,8 @@ public class VideoPreRecorder {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
-                        cameraController2.setCaptureSession(session);
                         session.setRepeatingRequest(captureRequestBuilder.build(), null, handler4);
+                        cameraController2.setCaptureSession(session);
                     } catch (CameraAccessException e) {
                         Log.e("startPreRecord", e.getMessage(), e);
                     }
@@ -283,7 +283,7 @@ public class VideoPreRecorder {
                                 VideosCacheData videosCacheData = new VideosCacheData(bufferInfo1, byteBufferCopy, trackIndex);
 //                                System.out.println("------ccg timestamp 1 ----" +  System.currentTimeMillis() +  "---" + bufferInfo.presentationTimeUs);
                                 if (isRecording == PRE_RECORDING) {
-                                    circularBuffer.add(videosCacheData);
+                                    circularBuffer.addAndRemoveExpireData(videosCacheData);
                                 } else {
                                     count++;
                                     fifoQueue.add(videosCacheData);
@@ -331,7 +331,7 @@ public class VideoPreRecorder {
                                     VideosCacheData audiosCacheData = new VideosCacheData(bufferInfo1, byteBufferCopy, audioTrackIndex);
                                     //                            System.out.println("------ccg timestamp 2 ----" +  System.currentTimeMillis() +  "---" + bufferInfo2.presentationTimeUs);
                                     if (isRecording == PRE_RECORDING) {
-                                        circularBuffer.add(audiosCacheData);
+                                        circularBuffer.addAndRemoveExpireData(audiosCacheData);
                                     } else {
                                         vdCount++;
                                         fifoQueue.add(audiosCacheData);
@@ -375,8 +375,6 @@ public class VideoPreRecorder {
 
             try {
                 for (VideosCacheData videosCacheData : circularBuffer.getAll()) {
-                    MediaCodec.BufferInfo bufferInfo = videosCacheData.getBufferInfo();
-//                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg circularBuffer ----" + bufferInfo.presentationTimeUs);
                     mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
                 }
             } finally {
@@ -388,7 +386,6 @@ public class VideoPreRecorder {
                 VideosCacheData videosCacheData;
                 try {
                     videosCacheData = fifoQueue.take();
-//                    System.out.println(videosCacheData.getTrackIndex() + "-----ccg fifoQueue ----" + videosCacheData.getBufferInfo().presentationTimeUs);
                     mediaMuxer.writeSampleData(videosCacheData.getTrackIndex(), videosCacheData.getEncodedByteBuffer(), videosCacheData.getBufferInfo());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -413,10 +410,6 @@ public class VideoPreRecorder {
 
                 isRecording = STOP_RECORDING;
                 // 不需要关闭
-//                handlerThread2.quitSafely();
-//                System.out.println("------ccg  预录size:" + circularBuffer.size());
-//                System.out.println("-------ccg 录像count " + count);
-//                System.out.println("--------ccg 音频vdcount " + vdCount);
                 try {
 //                    audioRecord.stop();
                     audioRecord.release();

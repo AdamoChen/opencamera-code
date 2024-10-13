@@ -9,14 +9,21 @@ import java.nio.ByteBuffer;
  */
 public class VideosCacheData {
 
-    private MediaCodec.BufferInfo bufferInfo;
-    private ByteBuffer encodedByteBuffer;
-    private int trackIndex;
+    private final MediaCodec.BufferInfo bufferInfo;
+    private final ByteBuffer encodedByteBuffer;
+    private final int trackIndex;
 
     public VideosCacheData(MediaCodec.BufferInfo bufferInfo, ByteBuffer encodedByteBuffer, int trackIndex) {
         this.bufferInfo = bufferInfo;
         this.encodedByteBuffer = encodedByteBuffer;
         this.trackIndex = trackIndex;
+    }
+
+    public long getPresentationTimeUs() {
+        if (bufferInfo == null) {
+            return -1;
+        }
+        return bufferInfo.presentationTimeUs;
     }
 
     public MediaCodec.BufferInfo getBufferInfo() {
