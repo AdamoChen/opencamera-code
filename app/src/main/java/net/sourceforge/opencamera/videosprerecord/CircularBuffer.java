@@ -11,6 +11,7 @@ import java.util.List;
  */
 public class CircularBuffer {
 
+    private int hasAddDataCount;
     private final LinkedList<VideosCacheData> linkedList = new LinkedList<>();
     private long preRecordingDurationUs = 45 * 1_000_000;
 
@@ -25,6 +26,12 @@ public class CircularBuffer {
      * @param item
      */
     public void addAndRemoveExpireData(VideosCacheData item) {
+        // 减少预录开始第一帧使用了 1x 画面的问题 暂时这样处理
+        if (hasAddDataCount < 32) {
+            hasAddDataCount++;
+            return;
+        }
+
         linkedList.add(item);
         try {
             while (!linkedList.isEmpty()) {
@@ -57,6 +64,7 @@ public class CircularBuffer {
     }
 
     public boolean clear() {
+        hasAddDataCount = 0;
         linkedList.clear();
         return true;
     }
