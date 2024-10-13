@@ -665,6 +665,16 @@
     <string name="preference_restore_settings_summary">恢复配置文件到Open Camera。注意这会覆盖现在的所有设定值！</string>
     <string name="preference_restore_settings_question">这个选项允许你选择一个先前保存的配置文件并恢复到Open Camera中。需要注意这个文件载入后会覆盖当前所有选项的设定值！</string>
 
+    <string name="preference_pre_recording_secs">设置预录时长</string>
+    <string name="preference_pre_recording_secs_summary">设置所需的预录时长，仅在预录模式生效。\n%s</string>
+
+    <string name="preference_pre_recording_secs_15">15秒</string>
+    <string name="preference_pre_recording_secs_30">30秒</string>
+    <string name="preference_pre_recording_secs_45">45秒</string>
+    <string name="preference_pre_recording_secs_60">60秒</string>
+    <string name="preference_pre_recording_secs_90">90秒</string>
+    <string name="preference_pre_recording_secs_120">120秒</string>
+
     <string name="preference_video_output_format">视频格式</string>
     <string name="preference_video_output_format_summary">录像的编码和格式\n%s</string>
 

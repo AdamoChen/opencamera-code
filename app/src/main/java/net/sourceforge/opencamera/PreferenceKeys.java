@@ -312,6 +312,11 @@ public class PreferenceKeys {
     public static final String PreferenceVideoPreRecording = "preference_video_pre_recording";
 
     /**
+     * 设置预录的秒数
+     */
+    public static final String PreferenceVideoPreRecordingSecs = "preference_pre_recording_secs";
+
+    /**
      * 启用预录时语音控制
      */
     public static final String PreferenceVideoPreRecordingKWS = "preference_video_pre_recording_kws";

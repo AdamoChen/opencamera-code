@@ -113,6 +113,8 @@ public interface ApplicationInterface {
     boolean getVideoStabilizationPref(); // whether to use video stabilization for video
     boolean getVideoPreRecordingPref(); // whether to use video pre-recording
 
+    int getVideoPreRecordingSecsPref();
+
     boolean getKeyWordsSpottingPref(); // whether to use keywords control rec-btn
 
     boolean getForce4KPref(); // whether to force 4K mode - experimental, only really available for some devices that allow 4K recording but don't return it as an available resolution - not recommended for most uses

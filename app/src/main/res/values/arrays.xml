@@ -845,6 +845,24 @@
         <item>2</item>
         <item>3</item>
     </string-array>
+
+    <string-array name="preference_pre_recording_secs_entries">
+        <item>@string/preference_pre_recording_secs_15</item>
+        <item>@string/preference_pre_recording_secs_30</item>
+        <item>@string/preference_pre_recording_secs_45</item>
+        <item>@string/preference_pre_recording_secs_60</item>
+        <item>@string/preference_pre_recording_secs_90</item>
+        <item>@string/preference_pre_recording_secs_120</item>
+    </string-array>
+    <string-array name="preference_pre_recording_secs_values">
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+        <item>90</item>
+        <item>120</item>
+    </string-array>
+
     <string-array name="preference_video_output_format_entries">
         <item>@string/preference_video_output_format_default</item>
         <item>@string/preference_video_output_format_mpeg4_h264</item>

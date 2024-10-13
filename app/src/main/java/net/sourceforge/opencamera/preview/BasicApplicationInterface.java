@@ -125,6 +125,11 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
     }
 
     @Override
+    public int getVideoPreRecordingSecsPref(){
+        return 45;
+    };
+
+    @Override
     public boolean getKeyWordsSpottingPref() {
         return false;
     }

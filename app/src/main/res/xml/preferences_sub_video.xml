@@ -24,6 +24,15 @@
         android:defaultValue="true"
         />
 
+    <ListPreference
+        android:key="preference_pre_recording_secs"
+        android:title="@string/preference_pre_recording_secs"
+        android:summary="@string/preference_pre_recording_secs_summary"
+        android:entries="@array/preference_pre_recording_secs_entries"
+        android:entryValues="@array/preference_pre_recording_secs_values"
+        android:defaultValue="45"
+        />
+
     <SwitchPreference
         android:key="preference_video_pre_recording_kws"
         android:title="@string/preference_video_pre_recording_kws"

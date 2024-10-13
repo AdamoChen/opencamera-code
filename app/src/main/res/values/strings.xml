@@ -719,6 +719,17 @@
     <string name="preference_hdr_contrast_enhancement_smart">Smart</string>
     <string name="preference_hdr_contrast_enhancement_always">Always</string>
 
+    <string name="preference_pre_recording_secs">pre-recording seconds</string>
+    <string name="preference_pre_recording_secs_summary">setting pre-recording seconds\n%s</string>
+
+<!--    <string name="preference_pre_recording_secs_default">Default</string>-->
+    <string name="preference_pre_recording_secs_15">15s</string>
+    <string name="preference_pre_recording_secs_30">30s</string>
+    <string name="preference_pre_recording_secs_45">45s</string>
+    <string name="preference_pre_recording_secs_60">60s</string>
+    <string name="preference_pre_recording_secs_90">90s</string>
+    <string name="preference_pre_recording_secs_120">120s</string>
+
     <string name="preference_video_output_format">Video format</string>
     <string name="preference_video_output_format_summary">Video and audio file format and codecs\n%s</string>
 

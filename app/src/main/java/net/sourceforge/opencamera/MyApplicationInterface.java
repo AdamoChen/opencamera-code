@@ -20,6 +20,7 @@ import net.sourceforge.opencamera.preview.Preview;
 import net.sourceforge.opencamera.preview.VideoProfile;
 import net.sourceforge.opencamera.ui.DrawPreview;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentValues;
@@ -707,6 +708,18 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     @Override
     public boolean getVideoPreRecordingPref() {
         return sharedPreferences.getBoolean(PreferenceKeys.PreferenceVideoPreRecording, true);
+    }
+
+    @SuppressLint("LongLogTag")
+    @Override
+    public int getVideoPreRecordingSecsPref() {
+        try {
+            String secs = sharedPreferences.getString(PreferenceKeys.PreferenceVideoPreRecordingSecs, "45");
+            return Integer.parseInt(secs);
+        } catch (NumberFormatException e) {
+            Log.e("get PreRecording secs error", e.getMessage());
+            return 45;
+        }
     }
 
     @Override

@@ -30,6 +30,7 @@ import net.sourceforge.opencamera.MainActivity;
 import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.CameraController2;
+import net.sourceforge.opencamera.preview.ApplicationInterface;
 import net.sourceforge.opencamera.preview.VideoProfile;
 
 import java.io.FileDescriptor;
@@ -48,6 +49,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class VideoPreRecorder {
 
     private final CameraController2 cameraController2;
+    private final ApplicationInterface applicationInterface;
 
     /**
      * 预览
@@ -109,6 +111,8 @@ public class VideoPreRecorder {
         try {
             // 需要设置，
             this.cameraEnable = true;
+            // 设置预录秒数
+            this.circularBuffer.setPreRecordingDurationUs(applicationInterface.getVideoPreRecordingSecsPref());
 
             if (keyWordsSpottingController != null) {
                 keyWordsSpottingController.startKeyWordsSpotting(activity, new KeyWordsSpottingAction() {
@@ -476,8 +480,9 @@ public class VideoPreRecorder {
 
     }
 
-    public VideoPreRecorder(CameraController cameraController2) {
+    public VideoPreRecorder(CameraController cameraController2, ApplicationInterface applicationInterface) {
         this.cameraController2 = (CameraController2) cameraController2;
+        this.applicationInterface = applicationInterface;
         cameraController2.initVideoPreRecorder(this);
     }
 

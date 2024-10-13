@@ -6231,7 +6231,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             // 替换掉 支持预录需要其他实现
 //            MediaRecorder local_video_recorder = new MediaRecorder();
             // 构建视频预录器
-            videoPreRecorder = new VideoPreRecorder(camera_controller);
+            videoPreRecorder = new VideoPreRecorder(camera_controller, applicationInterface);
 
             if (applicationInterface.getKeyWordsSpottingPref()) {
                 videoPreRecorder.initSpeechControl();
