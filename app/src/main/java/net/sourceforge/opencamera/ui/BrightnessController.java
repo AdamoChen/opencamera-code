@@ -33,7 +33,7 @@ public class BrightnessController {
     /**
      * 多少秒降低亮度
      */
-    private static final long DELAY_MILLIS = 10000L;
+    private static final long DELAY_MILLIS = 30000L;
 
     private final Runnable screenMinBrightnessRunnable = () -> {
         // 默认最低亮度
