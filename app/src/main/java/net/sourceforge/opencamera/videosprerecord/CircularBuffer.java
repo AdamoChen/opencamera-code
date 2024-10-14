@@ -11,6 +11,8 @@ import java.util.List;
  */
 public class CircularBuffer {
 
+    private final String TAG = "CircularBuffer";
+
     private int hasAddDataCount;
     private final LinkedList<VideosCacheData> linkedList = new LinkedList<>();
     private long preRecordingDurationUs = 45 * 1_000_000;
@@ -23,6 +25,7 @@ public class CircularBuffer {
 
     /**
      * 增加并延迟过期数据
+     *
      * @param item
      */
     public void addAndRemoveExpireData(VideosCacheData item) {
@@ -42,18 +45,17 @@ public class CircularBuffer {
                 }
             }
         } catch (Exception e) {
-            Log.e("add&RemoveExpireData er", String.valueOf(e));
+            Log.e(TAG, "addAndRemoveExpireData error", e);
         }
     }
 
     /**
-     *
      * @param durationSecs 秒数
      */
     @SuppressLint("LongLogTag")
     public void setPreRecordingDurationUs(int durationSecs) {
         if (durationSecs <= 0) {
-            Log.e("durationSecs must be bigger than 0", String.valueOf(durationSecs));
+            Log.e(TAG, "durationSecs must be bigger than 0");
             return;
         }
         this.preRecordingDurationUs = durationSecs * 1_000_000L;

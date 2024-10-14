@@ -102,7 +102,7 @@ class KeyWordsSpottingController {
     }
 
     private fun processSamples(activity: Activity, keyWordsSpottingAction: KeyWordsSpottingAction) {
-        Log.i(TAG, "processing samples")
+//        Log.i(TAG, "processing samples")
 
         val interval = 0.1 // i.e., 100 ms
         val bufferSize = (interval * sampleRateInHz).toInt() // in samples
